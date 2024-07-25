@@ -1,31 +1,37 @@
+// src/hooks/useCards.ts
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
-import { Card } from '../types';
 
-const fetchCards = async (): Promise<Card[]> => {
+export interface Card {
+  id: string;
+  front: string;
+  back: string;
+  created_at: string;
+}
+
+const fetchCards = async (deckId: string): Promise<Card[]> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error('No active session');
-  }
+  if (!session) throw new Error('No active session');
 
-  const response = await fetch('http://localhost:3001/api/cards', {
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
+  const response = await fetch(
+    `http://localhost:3001/api/cards/deck/${deckId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    }
+  );
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch cards');
-  }
-
+  if (!response.ok) throw new Error('Failed to fetch cards');
   return response.json();
 };
 
-export const useCards = () => {
+export const useCards = (deckId: string) => {
   return useQuery({
-    queryKey: ['cards'],
-    queryFn: fetchCards,
+    queryKey: ['cards', deckId],
+    queryFn: () => fetchCards(deckId),
+    enabled: !!deckId,
   });
 };

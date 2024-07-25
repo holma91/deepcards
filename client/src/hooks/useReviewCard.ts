@@ -35,7 +35,7 @@ export const useReviewCard = () => {
   return useMutation({
     mutationFn: ({ cardId, grade }: { cardId: string; grade: number }) =>
       reviewCard(cardId, grade),
-    onMutate: async ({ cardId, grade }) => {
+    onMutate: async ({ cardId }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: ['cards'] });
 
@@ -52,7 +52,7 @@ export const useReviewCard = () => {
       // Return a context object with the snapshotted value
       return { previousCards };
     },
-    onError: (err, newTodo, context) => {
+    onError: (_, __, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousCards) {
         queryClient.setQueryData<Card[]>(['cards'], context.previousCards);

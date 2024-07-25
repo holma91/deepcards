@@ -1,10 +1,10 @@
 import React from 'react';
 import Flashcard from './Flashcard';
-import { useCards } from '../hooks/useCards';
+import { useCardsOld } from '../hooks/useCardsOld';
 import { useReviewCard } from '../hooks/useReviewCard';
 
 const ReviewSession: React.FC = () => {
-  const { isPending, isError, data: cards, error } = useCards();
+  const { isPending, isError, data: cards, error } = useCardsOld();
   const reviewCardMutation = useReviewCard();
 
   const handleReview = (grade: number) => {

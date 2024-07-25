@@ -14,9 +14,58 @@ export interface Card {
   created_at: string;
 }
 
+export interface Deck {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
 const router = express.Router();
 
-router.get('/', authenticateUser, async (req, res) => {
+// Get all decks for the user
+router.get('/decks', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('decks')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .order('name');
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch decks' });
+  }
+});
+
+// Create a new deck
+router.post('/decks', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { name } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from('decks')
+      .insert({ user_id: req.user.id, name })
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create deck' });
+  }
+});
+
+// Get cards due for review (across all decks)
+router.get('/due', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
@@ -29,13 +78,68 @@ router.get('/', authenticateUser, async (req, res) => {
       .lte('next_review', new Date().toISOString())
       .order('next_review');
 
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch cards' });
+    res.status(500).json({ error: 'Failed to fetch due cards' });
+  }
+});
+
+// Get all cards in a specific deck
+router.get('/deck/:deckId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { deckId } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('cards')
+      .select(
+        `
+        *,
+        card_decks!inner(deck_id)
+      `
+      )
+      .eq('user_id', req.user.id)
+      .eq('card_decks.deck_id', deckId)
+      .order('created_at');
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch cards for deck' });
+  }
+});
+
+// Create a new card and add it to a deck
+router.post('/', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { front, back, deckId } = req.body;
+
+  try {
+    const { data: card, error: cardError } = await supabase
+      .from('cards')
+      .insert({ user_id: req.user.id, front, back })
+      .select()
+      .single();
+
+    if (cardError || !card)
+      throw cardError || new Error('Failed to create card');
+
+    const { error: deckError } = await supabase
+      .from('card_decks')
+      .insert({ card_id: card.id, deck_id: deckId });
+
+    if (deckError) throw deckError;
+
+    res.status(201).json(card);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create card' });
   }
 });
 
