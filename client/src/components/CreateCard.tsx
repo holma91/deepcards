@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDecks } from '../hooks/useDecks';
 import { useCreateCard } from '../hooks/useCreateCard';
-import { useCards, Card } from '../hooks/useCards';
+import { useCards } from '../hooks/useCards';
+import CardTable from './CardTable';
 
 const CreateCard: React.FC = () => {
   const [isManual, setIsManual] = useState(true);
@@ -42,9 +43,17 @@ const CreateCard: React.FC = () => {
     }
   }, [decks, selectedDeck]);
 
+  const handleDeleteCard = (cardId: string) => {
+    // Implement delete functionality here
+    console.log(`Delete card with id: ${cardId}`);
+  };
+
   if (isLoadingDecks) return <div>Loading decks...</div>;
   if (decksError)
     return <div>Error loading decks: {(decksError as Error).message}</div>;
+
+  const selectedDeckName =
+    decks?.find((deck) => deck.id === selectedDeck)?.name || 'Selected Deck';
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -102,21 +111,32 @@ const CreateCard: React.FC = () => {
         </div>
 
         <div className="flex justify-center items-center space-x-4">
-          <select
-            value={selectedDeck}
-            onChange={(e) => setSelectedDeck(e.target.value)}
-            className="block w-64 bg-white border border-gray-300 rounded-md shadow-sm"
-          >
-            {decks?.map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative inline-block w-64">
+            <select
+              value={selectedDeck}
+              onChange={(e) => setSelectedDeck(e.target.value)}
+              className="block appearance-none w-full bg-white border border-gray-300 hover:border-gray-400 px-4 py-2 pr-8 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              {decks?.map((deck) => (
+                <option key={deck.id} value={deck.id}>
+                  {deck.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg
+                className="fill-current h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
 
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             disabled={createCardMutation.isPending}
           >
             {createCardMutation.isPending ? 'Adding...' : 'Add card'}
@@ -131,27 +151,16 @@ const CreateCard: React.FC = () => {
       )}
 
       <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Cards in selected deck</h3>
+        <h3 className="text-lg font-medium mb-4">
+          Cards in {selectedDeckName}
+        </h3>
+
         {isLoadingCards && !cards ? (
           <div>Loading cards...</div>
         ) : cardsError ? (
           <div>Error loading cards: {(cardsError as Error).message}</div>
         ) : cards && cards.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {cards.map((card: Card) => (
-              <li key={card.id} className="py-4">
-                <div className="flex justify-between">
-                  <div className="text-sm font-medium text-gray-900">
-                    {card.front}
-                  </div>
-                  <div className="text-sm text-gray-500">{card.back}</div>
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Created: {new Date(card.created_at).toLocaleString()}
-                </div>
-              </li>
-            ))}
-          </ul>
+          <CardTable cards={cards} onDeleteCard={handleDeleteCard} />
         ) : (
           <div>No cards in this deck yet.</div>
         )}

@@ -13,5 +13,8 @@ export interface Card {
 export interface Deck {
   id: string;
   name: string;
+}
+
+export interface DeckWithCards extends Deck {
   cards: Card[];
 }
