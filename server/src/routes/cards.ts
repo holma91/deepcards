@@ -43,23 +43,31 @@ router.get('/decks', authenticateUser, async (req, res) => {
   }
 });
 
-// Create a new deck
 router.post('/decks', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
 
-  const { name } = req.body;
+  const { id, name } = req.body;
+
+  if (!id || !name || typeof name !== 'string' || name.trim() === '') {
+    return res.status(400).json({ error: 'Invalid deck data' });
+  }
 
   try {
-    const { data, error } = await supabase
+    const { data: newDeck, error } = await supabase
       .from('decks')
-      .insert({ user_id: req.user.id, name })
+      .insert({ id, user_id: req.user.id, name: name.trim() })
+      .select()
       .single();
 
-    if (error) throw error;
-    res.status(201).json(data);
+    if (error) {
+      throw error;
+    }
+
+    res.status(201).json(newDeck);
   } catch (error) {
+    console.error('Error creating deck:', error);
     res.status(500).json({ error: 'Failed to create deck' });
   }
 });
@@ -140,6 +148,45 @@ router.post('/', authenticateUser, async (req, res) => {
     res.status(201).json(card);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create card' });
+  }
+});
+
+router.delete('/:cardId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { cardId } = req.params;
+
+  try {
+    // First, check if the card belongs to the user
+    const { data: card, error: fetchError } = await supabase
+      .from('cards')
+      .select('*')
+      .eq('id', cardId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (fetchError || !card) {
+      return res
+        .status(404)
+        .json({ error: 'Card not found or does not belong to the user' });
+    }
+
+    // If the card belongs to the user, delete it
+    const { error: deleteError } = await supabase
+      .from('cards')
+      .delete()
+      .eq('id', cardId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    res.status(200).json({ message: 'Card deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting card:', error);
+    res.status(500).json({ error: 'Failed to delete card' });
   }
 });
 
