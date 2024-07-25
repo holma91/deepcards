@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:3001
+@authToken = insert_valid_token
+@invalidAuthToken = insert_invalid_token
+
+### Test the root endpoint
+GET {{baseUrl}}/
+
+### Get cards (without authentication)
+GET {{baseUrl}}/api/cards
+
+### Get cards (with invalid authentication)
+GET {{baseUrl}}/api/cards
+Authorization: Bearer {{invalidAuthToken}}
+
+### Get cards (with authentication)
+GET {{baseUrl}}/api/cards
+Authorization: Bearer {{authToken}}
