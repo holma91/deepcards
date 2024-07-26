@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDecks } from '../hooks/useDecks';
 import { useCreateCard } from '../hooks/mutations/useCreateCard';
 import { useCards } from '../hooks/useCards';
-import CardTable from './CardTable';
+import CardTable from '../components/CardTable';
 import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
 import { useCreateDeck } from '../hooks/mutations/useCreateDeck';
 import { v4 as uuidv4 } from 'uuid';
@@ -97,7 +97,7 @@ const CreateCard: React.FC = () => {
     decks?.find((deck) => deck.id === selectedDeck)?.name || 'Selected Deck';
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full px-6 py-8">
       <div className="flex mb-4">
         <button
           className={`px-4 py-2 rounded-l ${
@@ -226,21 +226,27 @@ const CreateCard: React.FC = () => {
         </div>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 w-full">
         <h3 className="text-lg font-medium mb-4">
           Cards in {isCreatingNewDeck ? 'New Deck' : selectedDeckName}
         </h3>
-        {isCreatingNewDeck ? (
-          <div>Create a new deck to add cards</div>
-        ) : isLoadingCards && !cards ? (
-          <div>Loading cards...</div>
-        ) : cardsError ? (
-          <div>Error loading cards: {(cardsError as Error).message}</div>
-        ) : cards && cards.length > 0 ? (
-          <CardTable cards={cards} onDeleteCard={handleDeleteCard} />
-        ) : (
-          <div>No cards in this deck yet.</div>
-        )}
+        <div className="w-full bg-white shadow overflow-hidden sm:rounded-lg">
+          {isCreatingNewDeck ? (
+            <div className="px-4 py-5 sm:p-6">
+              Create a new deck to add cards
+            </div>
+          ) : isLoadingCards && !cards ? (
+            <div className="px-4 py-5 sm:p-6">Loading cards...</div>
+          ) : cardsError ? (
+            <div className="px-4 py-5 sm:p-6">
+              Error loading cards: {(cardsError as Error).message}
+            </div>
+          ) : cards && cards.length > 0 ? (
+            <CardTable cards={cards} onDeleteCard={handleDeleteCard} />
+          ) : (
+            <div className="px-4 py-5 sm:p-6">No cards in this deck yet.</div>
+          )}
+        </div>
       </div>
     </div>
   );

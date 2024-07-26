@@ -8,7 +8,7 @@ const Sidebar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="w-64 bg-gray-50 min-h-screen fixed left-0 top-16 overflow-y-auto">
+    <nav className="fixed top-16 left-0 bg-gray-50 h-[calc(100vh-4rem)] w-64 overflow-y-auto">
       <ul className="mt-6">
         {[
           { path: '/', label: 'Dashboard' },

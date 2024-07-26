@@ -2,10 +2,10 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import ReviewSession from './components/ReviewSession';
+import ReviewSession from './pages/ReviewSession';
 import Sidebar from './components/Sidebar';
-import Home from './components/Home';
-import CreateCard from './components/CreateCard';
+import Home from './pages/Home';
+import CreateCard from './pages/CreateCard';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Header from './components/Header';
@@ -24,13 +24,11 @@ const AppContent: React.FC = () => {
   const { session } = useAuth();
 
   return (
-    <div className="min-h-screen bg-white">
-      {session && <Header />}
-      <div className="flex pt-16">
-        {' '}
-        {/* Add padding-top to account for fixed header */}
+    <div className="flex flex-col h-screen bg-white">
+      <Header />
+      <div className="flex flex-1 pt-16">
         {session && <Sidebar />}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className={`flex-1 overflow-auto ${session ? 'ml-64' : ''}`}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route
@@ -63,4 +61,5 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
+
 export default App;

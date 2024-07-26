@@ -1,5 +1,5 @@
 import React from 'react';
-import Flashcard from './Flashcard';
+import Flashcard from '../components/Flashcard';
 import { useReviews } from '../hooks/useReviews';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
 
@@ -9,6 +9,7 @@ const ReviewSession: React.FC = () => {
 
   const handleReview = (grade: number) => {
     if (cards && cards.length > 0) {
+      console.log('grade', grade);
       reviewCardMutation.mutate({ cardId: cards[0].id, grade });
     }
   };
@@ -38,8 +39,7 @@ const ReviewSession: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 min-h-[300px] justify-center">
-      <h2 className="text-2xl font-bold">Review Session</h2>
+    <div className="flex flex-col items-center justify-center h-full px-6 max-w-4xl mx-auto">
       {renderContent()}
     </div>
   );
