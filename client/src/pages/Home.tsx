@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useStats } from '../hooks/useStats';
 
 const Home: React.FC = () => {

@@ -1,6 +1,7 @@
 // src/hooks/useCards.ts
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
+import { API_BASE_URL } from '../config';
 
 export interface Card {
   id: string;
@@ -15,14 +16,11 @@ const fetchCards = async (deckId: string): Promise<Card[]> => {
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
 
-  const response = await fetch(
-    `http://localhost:3001/api/cards/deck/${deckId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    }
-  );
+  const response = await fetch(`${API_BASE_URL}/cards/deck/${deckId}`, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
 
   if (!response.ok) throw new Error('Failed to fetch cards');
   return response.json();

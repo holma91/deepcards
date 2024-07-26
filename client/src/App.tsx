@@ -5,7 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ReviewSession from './pages/ReviewSession';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
-import CreateCard from './pages/CreateCard';
+import CreateCard from './pages/Cards';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Header from './components/Header';
@@ -48,7 +48,7 @@ const AppContent: React.FC = () => {
               }
             />
             <Route
-              path="/create"
+              path="/cards"
               element={
                 <ProtectedRoute>
                   <CreateCard />

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
 import { Deck } from '../types';
+import { API_BASE_URL } from '../config';
 
 const fetchDecks = async (): Promise<Deck[]> => {
   const {
@@ -8,7 +9,7 @@ const fetchDecks = async (): Promise<Deck[]> => {
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
 
-  const response = await fetch('http://localhost:3001/api/cards/decks', {
+  const response = await fetch(`${API_BASE_URL}/cards/decks`, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },

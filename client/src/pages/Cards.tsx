@@ -7,7 +7,7 @@ import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
 import { useCreateDeck } from '../hooks/mutations/useCreateDeck';
 import { v4 as uuidv4 } from 'uuid';
 
-const CreateCard: React.FC = () => {
+const Cards: React.FC = () => {
   const [isManual, setIsManual] = useState(true);
   const [selectedDeck, setSelectedDeck] = useState<string>('');
   const [frontContent, setFrontContent] = useState('');
@@ -252,4 +252,4 @@ const CreateCard: React.FC = () => {
   );
 };
 
-export default CreateCard;
+export default Cards;

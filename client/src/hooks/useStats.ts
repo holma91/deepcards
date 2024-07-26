@@ -1,6 +1,7 @@
 // src/hooks/useStats.ts
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
+import { API_BASE_URL } from '../config';
 
 interface Stats {
   today: {
@@ -19,7 +20,7 @@ const fetchStats = async (): Promise<Stats> => {
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
 
-  const response = await fetch('http://localhost:3001/api/cards/stats', {
+  const response = await fetch(`${API_BASE_URL}/cards/stats`, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },

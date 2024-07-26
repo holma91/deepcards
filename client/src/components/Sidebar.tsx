@@ -13,7 +13,7 @@ const Sidebar: React.FC = () => {
         {[
           { path: '/', label: 'Dashboard' },
           { path: '/review', label: 'Review' },
-          { path: '/create', label: 'New Cards' },
+          { path: '/cards', label: 'Cards' },
         ].map(({ path, label }) => (
           <li key={path}>
             <Link
