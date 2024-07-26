@@ -1,8 +1,8 @@
 // src/hooks/useReviewCard.ts
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabaseClient';
-import { Card } from '../types';
+import { supabase } from '../../supabaseClient';
+import { Card } from '../../types';
 
 const reviewCard = async (cardId: string, grade: number): Promise<void> => {
   const {

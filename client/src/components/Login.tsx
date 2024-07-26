@@ -24,7 +24,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <h1 className="text-3xl font-bold mb-8">DeepFlash</h1>
+      <h1 className="text-3xl font-bold mb-8">Deepcards</h1>
       <button
         onClick={handleLogin}
         disabled={loading}

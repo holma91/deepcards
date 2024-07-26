@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../supabaseClient';
-import { Deck } from '../types';
+import { supabase } from '../../supabaseClient';
+import { Deck } from '../../types';
 
 interface CreateDeckVariables {
   id: string;

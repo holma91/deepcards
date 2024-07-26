@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useDecks } from '../hooks/useDecks';
-import { useCreateCard } from '../hooks/useCreateCard';
+import { useCreateCard } from '../hooks/mutations/useCreateCard';
 import { useCards } from '../hooks/useCards';
 import CardTable from './CardTable';
-import { useDeleteCard } from '../hooks/useDeleteCard';
-import { useCreateDeck } from '../hooks/useCreateDeck';
+import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
+import { useCreateDeck } from '../hooks/mutations/useCreateDeck';
 import { v4 as uuidv4 } from 'uuid';
 
 const CreateCard: React.FC = () => {

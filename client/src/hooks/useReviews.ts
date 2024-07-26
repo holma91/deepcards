@@ -10,7 +10,7 @@ const fetchCards = async (): Promise<Card[]> => {
     throw new Error('No active session');
   }
 
-  const response = await fetch('http://localhost:3001/api/cards', {
+  const response = await fetch('http://localhost:3001/api/cards/due', {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
@@ -23,7 +23,7 @@ const fetchCards = async (): Promise<Card[]> => {
   return response.json();
 };
 
-export const useCardsOld = () => {
+export const useReviews = () => {
   return useQuery({
     queryKey: ['cards'],
     queryFn: fetchCards,
