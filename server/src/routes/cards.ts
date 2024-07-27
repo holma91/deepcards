@@ -246,6 +246,43 @@ router.get('/decks/due-counts', authenticateUser, async (req, res) => {
   }
 });
 
+router.get('/', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('cards')
+      .select(
+        `
+        *,
+        card_decks (
+          deck_id
+        )
+      `
+      )
+      .eq('user_id', req.user.id)
+      .order('created_at', { ascending: false });
+
+    console.log('data', data);
+    console.log('error', error);
+
+    if (error) throw error;
+
+    // Transform the data to include deckId directly on the card object
+    const transformedData = data.map((card) => ({
+      ...card,
+      deckId: card.card_decks[0]?.deck_id,
+      card_decks: undefined, // Remove the card_decks property
+    }));
+
+    res.json(keysToCamelCase(transformedData));
+  } catch (error) {
+    console.error('Error fetching cards:', error);
+    res.status(500).json({ error: 'Failed to fetch cards' });
+  }
+});
 // Create a new card and add it to a deck
 router.post('/', authenticateUser, async (req, res) => {
   if (!req.user) {

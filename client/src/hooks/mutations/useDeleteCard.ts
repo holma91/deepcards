@@ -3,12 +3,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../supabaseClient';
 
-const deleteCard = async ({
-  cardId,
-}: {
+interface DeleteCardParams {
   cardId: string;
-  deckId: string;
-}): Promise<void> => {
+  deckId?: string; // Make deckId optional
+}
+
+const deleteCard = async ({ cardId }: DeleteCardParams): Promise<void> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -31,31 +31,44 @@ export const useDeleteCard = () => {
 
   return useMutation({
     mutationFn: deleteCard,
-    onMutate: async ({ cardId, deckId }) => {
+    onMutate: async ({ cardId, deckId }: DeleteCardParams) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['cards', deckId] });
-
-      // Snapshot the previous value
-      const previousCards = queryClient.getQueryData<any[]>(['cards', deckId]);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData<any[]>(['cards', deckId], (old) => {
-        return old ? old.filter((card) => card.id !== cardId) : [];
+      await queryClient.cancelQueries({
+        queryKey: deckId ? ['cards', deckId] : ['cards'],
       });
 
+      // Snapshot the previous value
+      const previousCards = queryClient.getQueryData<any[]>(
+        deckId ? ['cards', deckId] : ['cards']
+      );
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<any[]>(
+        deckId ? ['cards', deckId] : ['cards'],
+        (old) => {
+          return old ? old.filter((card) => card.id !== cardId) : [];
+        }
+      );
+
       // Return a context object with the snapshotted value
-      return { previousCards };
+      return { previousCards, deckId };
     },
     onError: (_, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(
-        ['cards', variables.deckId],
+        context?.deckId ? ['cards', context.deckId] : ['cards'],
         context?.previousCards
       );
     },
-    onSettled: (_, __, variables) => {
+    onSettled: (_, __, variables, context) => {
       // Always refetch after error or success:
-      queryClient.invalidateQueries({ queryKey: ['cards', variables.deckId] });
+      if (context?.deckId) {
+        queryClient.invalidateQueries({ queryKey: ['cards', context.deckId] });
+      }
+      // Always invalidate the all-cards query
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      // Invalidate deck due counts
+      queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
     },
   });
 };

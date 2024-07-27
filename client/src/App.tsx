@@ -5,10 +5,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ReviewSession from './pages/ReviewSession';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
-import CreateCard from './pages/Cards';
+import Cards from './pages/Cards';
 import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import PublicHome from './pages/PublicHome';
+import DeckCards from './pages/DeckCards';
 
 function App() {
   return (
@@ -39,12 +40,27 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="/review/:deckId" element={<ReviewSession />} />
+            <Route
+              path="/review/:deckId"
+              element={
+                <ProtectedRoute>
+                  <ReviewSession />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/cards"
               element={
                 <ProtectedRoute>
-                  <CreateCard />
+                  <Cards />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cards/:deckId"
+              element={
+                <ProtectedRoute>
+                  <DeckCards />
                 </ProtectedRoute>
               }
             />
