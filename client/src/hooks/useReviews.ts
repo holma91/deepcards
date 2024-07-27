@@ -1,9 +1,11 @@
+// src/hooks/useReviews.ts
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
 import { Card } from '../types';
 import { API_BASE_URL } from '../config';
 
-const fetchCards = async (): Promise<Card[]> => {
+const fetchCards = async (deckId?: string): Promise<Card[]> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -11,7 +13,11 @@ const fetchCards = async (): Promise<Card[]> => {
     throw new Error('No active session');
   }
 
-  const response = await fetch(`${API_BASE_URL}/cards/due`, {
+  const url = deckId
+    ? `${API_BASE_URL}/cards/deck/${deckId}/due`
+    : `${API_BASE_URL}/cards/due`;
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${session.access_token}`,
     },
@@ -24,9 +30,9 @@ const fetchCards = async (): Promise<Card[]> => {
   return response.json();
 };
 
-export const useReviews = () => {
+export const useReviews = (deckId?: string) => {
   return useQuery({
-    queryKey: ['cards'],
-    queryFn: fetchCards,
+    queryKey: ['cards', 'due', deckId],
+    queryFn: () => fetchCards(deckId),
   });
 };

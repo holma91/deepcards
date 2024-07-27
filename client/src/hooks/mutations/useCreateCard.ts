@@ -1,7 +1,7 @@
 // src/hooks/useCreateCard.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../supabaseClient';
-import { Card } from '../useCards';
+import { Card } from '../../types';
 
 interface CreateCardParams {
   front: string;
@@ -54,26 +54,34 @@ export const useCreateCard = () => {
           ...old,
           {
             id: 'temp-id-' + Date.now(), // temporary ID
+            deckId: newCard.deckId,
+            userId: 'temp-user-id', // You might want to get this from the session
             front: newCard.front,
             back: newCard.back,
-            created_at: new Date().toISOString(),
+            stage: 0,
+            easeFactor: 2.5, // Default value, adjust as needed
+            interval: 0,
+            nextReview: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
           },
         ]
       );
 
-      // Return a context object with the snapshotted value
       return { previousCards };
     },
     onError: (_, newCard, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(
         ['cards', newCard.deckId],
         context?.previousCards
       );
     },
     onSettled: (_, __, newCard) => {
-      // Always refetch after error or success:
       queryClient.invalidateQueries({ queryKey: ['cards', newCard.deckId] });
+      queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['cards', 'due'] });
+      queryClient.invalidateQueries({
+        queryKey: ['cards', 'due', newCard.deckId],
+      });
     },
   });
 };

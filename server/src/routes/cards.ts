@@ -2,24 +2,26 @@ import express from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { supabase } from '../supabaseClient';
 
-export interface Card {
-  id: string;
-  user_id: string;
-  front: string;
-  back: string;
-  stage: number;
-  ease_factor: number;
-  interval: number;
-  next_review: string;
-  created_at: string;
-  last_reviewed_at: string;
+export function toCamelCase(str: string): string {
+  return str.replace(/([-_][a-z])/g, (group) =>
+    group.toUpperCase().replace('-', '').replace('_', '')
+  );
 }
 
-export interface Deck {
-  id: string;
-  user_id: string;
-  name: string;
-  created_at: string;
+export function keysToCamelCase(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((v) => keysToCamelCase(v));
+  }
+
+  return Object.keys(obj).reduce((result: any, key) => {
+    const camelKey = toCamelCase(key);
+    result[camelKey] = keysToCamelCase(obj[key]);
+    return result;
+  }, {});
 }
 
 const router = express.Router();
@@ -72,7 +74,7 @@ router.get('/stats', authenticateUser, async (req, res) => {
       },
     };
 
-    res.json(stats);
+    res.json(keysToCamelCase(stats));
   } catch (error) {
     console.error('Unexpected error in stats route:', error);
     res.status(500).json({
@@ -95,7 +97,7 @@ router.get('/decks', authenticateUser, async (req, res) => {
       .order('name');
 
     if (error) throw error;
-    res.json(data);
+    res.json(keysToCamelCase(data));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch decks' });
   }
@@ -123,7 +125,7 @@ router.post('/decks', authenticateUser, async (req, res) => {
       throw error;
     }
 
-    res.status(201).json(newDeck);
+    res.status(201).json(keysToCamelCase(newDeck));
   } catch (error) {
     console.error('Error creating deck:', error);
     res.status(500).json({ error: 'Failed to create deck' });
@@ -145,7 +147,7 @@ router.get('/due', authenticateUser, async (req, res) => {
       .order('next_review');
 
     if (error) throw error;
-    res.json(data);
+    res.json(keysToCamelCase(data));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch due cards' });
   }
@@ -173,9 +175,74 @@ router.get('/deck/:deckId', authenticateUser, async (req, res) => {
       .order('created_at');
 
     if (error) throw error;
-    res.json(data);
+    res.json(keysToCamelCase(data));
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch cards for deck' });
+  }
+});
+
+router.get('/deck/:deckId/due', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { deckId } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('cards')
+      .select(
+        `
+        *,
+        card_decks!inner(deck_id)
+      `
+      )
+      .eq('user_id', req.user.id)
+      .eq('card_decks.deck_id', deckId)
+      .lte('next_review', new Date().toISOString())
+      .order('next_review');
+
+    if (error) throw error;
+    res.json(keysToCamelCase(data));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch due cards for deck' });
+  }
+});
+
+router.get('/decks/due-counts', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('decks')
+      .select(
+        `
+        id,
+        name,
+        due_count:card_decks!inner(
+          cards!inner(
+            id
+          )
+        )
+      `
+      )
+      .eq('user_id', req.user.id)
+      .lte('card_decks.cards.next_review', 'now()');
+
+    if (error) throw error;
+
+    const decksDueCounts = data.map((deck) => ({
+      id: deck.id,
+      name: deck.name,
+      dueCount: deck.due_count.length,
+    }));
+
+    res.json(keysToCamelCase(decksDueCounts));
+  } catch (error) {
+    console.error('Error fetching deck due counts:', error);
+    res.status(500).json({ error: 'Failed to fetch deck due counts' });
   }
 });
 
@@ -203,7 +270,7 @@ router.post('/', authenticateUser, async (req, res) => {
 
     if (deckError) throw deckError;
 
-    res.status(201).json(card);
+    res.status(201).json(keysToCamelCase(card));
   } catch (error) {
     res.status(500).json({ error: 'Failed to create card' });
   }
@@ -286,7 +353,7 @@ router.post('/:id/review', authenticateUser, async (req, res) => {
       throw updateError;
     }
 
-    res.json(data);
+    res.json(keysToCamelCase(data));
   } catch (error) {
     res.status(500).json({ error: 'Failed to update card' });
   }
@@ -314,6 +381,19 @@ function calculateNextReview(
   ease_factor = Math.max(1.3, ease_factor);
 
   return { interval, ease_factor };
+}
+
+export interface Card {
+  id: string;
+  user_id: string;
+  front: string;
+  back: string;
+  stage: number;
+  ease_factor: number;
+  interval: number;
+  next_review: string;
+  created_at: string;
+  last_reviewed_at: string;
 }
 
 export default router;

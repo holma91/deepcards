@@ -7,7 +7,6 @@ import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import CreateCard from './pages/Cards';
 import { useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
 import Header from './components/Header';
 import PublicHome from './pages/PublicHome';
 
@@ -40,6 +39,7 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/review/:deckId" element={<ReviewSession />} />
             <Route
               path="/cards"
               element={

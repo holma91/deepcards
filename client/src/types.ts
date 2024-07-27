@@ -1,13 +1,14 @@
 export interface Card {
   id: string;
-  user_id: string;
+  deckId: string;
+  userId: string;
   front: string;
   back: string;
   stage: number;
-  ease_factor: number;
+  easeFactor: number;
   interval: number;
-  next_review: string;
-  created_at: string;
+  nextReview: string;
+  createdAt: string;
 }
 
 export interface Deck {

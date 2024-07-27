@@ -1,15 +1,21 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import Flashcard from '../components/Flashcard';
 import { useReviews } from '../hooks/useReviews';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
 
 const ReviewSession: React.FC = () => {
-  const { isPending, isError, data: cards, error } = useReviews();
+  const { deckId } = useParams<{ deckId?: string }>();
+  const { isPending, isError, data: cards, error } = useReviews(deckId);
   const reviewCardMutation = useReviewCard();
 
   const handleReview = (grade: number) => {
     if (cards && cards.length > 0) {
-      reviewCardMutation.mutate({ cardId: cards[0].id, grade });
+      reviewCardMutation.mutate({
+        cardId: cards[0].id,
+        grade,
+        deckId: deckId || cards[0].deckId, // Use the URL deckId if available, otherwise use the card's deckId
+      });
     }
   };
 

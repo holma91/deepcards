@@ -8,7 +8,7 @@ import {
   SortingState,
   getFilteredRowModel,
 } from '@tanstack/react-table';
-import { Card } from '../hooks/useCards';
+import { Card } from '../types';
 
 interface CardTableProps {
   cards: Card[];
@@ -37,7 +37,7 @@ const CardTable: React.FC<CardTableProps> = ({ cards, onDeleteCard }) => {
       cell: (info) => truncateText(info.getValue(), MAX_CELL_LENGTH),
       header: () => <span>Back</span>,
     }),
-    columnHelper.accessor('created_at', {
+    columnHelper.accessor('createdAt', {
       cell: (info) => new Date(info.getValue()).toLocaleString(),
       header: () => <span>Created At</span>,
     }),
