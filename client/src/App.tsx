@@ -9,6 +9,7 @@ import CreateCard from './pages/Cards';
 import { useAuth } from './contexts/AuthContext';
 import Login from './components/Login';
 import Header from './components/Header';
+import PublicHome from './pages/PublicHome';
 
 function App() {
   return (
@@ -30,15 +31,7 @@ const AppContent: React.FC = () => {
         {session && <Sidebar />}
         <main className={`flex-1 overflow-auto ${session ? 'ml-64' : ''}`}>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/" element={session ? <Home /> : <PublicHome />} />
             <Route
               path="/review"
               element={
