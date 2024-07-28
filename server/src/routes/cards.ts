@@ -181,6 +181,56 @@ router.get('/deck/:deckId', authenticateUser, async (req, res) => {
   }
 });
 
+// Delete a deck
+router.delete('/decks/:deckId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { deckId } = req.params;
+
+  try {
+    const { error } = await supabase
+      .from('decks')
+      .delete()
+      .eq('id', deckId)
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+    res.json({ message: 'Deck deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete deck' });
+  }
+});
+
+router.patch('/decks/:deckId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { deckId } = req.params;
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'New name is required' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('decks')
+      .update({ name })
+      .eq('id', deckId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update deck name' });
+  }
+});
+
 router.get('/deck/:deckId/due', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
