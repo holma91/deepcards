@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Card } from '../types';
+import '../markdown.css';
 
 interface FlashcardProps {
   card: Card;
@@ -66,11 +68,17 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   return (
     <div className="w-full max-w-2xl flex flex-col items-center justify-center">
       <div className="w-full p-6 bg-white rounded-lg">
-        <p className="text-2xl mb-4 font-semibold text-center">{card.front}</p>
+        <div className="text-2xl mb-4 font-semibold text-center">
+          <div className="markdown-content">
+            <ReactMarkdown>{card.front}</ReactMarkdown>
+          </div>
+        </div>
         {isRevealed && (
           <>
             <div className="mt-4 pt-4 border-t border-gray-200 w-full">
-              <p className="text-xl text-center">{card.back}</p>
+              <div className="markdown-content">
+                <ReactMarkdown>{card.back}</ReactMarkdown>
+              </div>
             </div>
             <div className="flex flex-wrap justify-center gap-4 mt-6">
               {[
