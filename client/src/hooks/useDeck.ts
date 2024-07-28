@@ -1,21 +1,32 @@
+// src/hooks/useDeck.ts
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabaseClient';
+import { API_BASE_URL } from '../config';
 
 interface Deck {
   id: string;
   name: string;
-  // Add other deck properties as needed
 }
 
 const fetchDeck = async (deckId: string): Promise<Deck> => {
-  const { data, error } = await supabase
-    .from('decks')
-    .select('*')
-    .eq('id', deckId)
-    .single();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error('No active session');
 
-  if (error) throw error;
-  return data;
+  const response = await fetch(`${API_BASE_URL}/decks/${deckId}`, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Deck not found');
+    }
+    throw new Error('Failed to fetch deck');
+  }
+  return response.json();
 };
 
 export const useDeck = (deckId: string | undefined) => {

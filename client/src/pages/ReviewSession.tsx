@@ -1,12 +1,18 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import Flashcard from '../components/Flashcard';
-import { useReviews } from '../hooks/useReviews';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
+import { useAllDueCards } from '../hooks/useAllDueCards';
+import { useDeckDueCards } from '../hooks/useDeckDueCards';
+import renderDeckInfo from '../utils/renderDeckInfo';
 
 const ReviewSession: React.FC = () => {
   const { deckId } = useParams<{ deckId?: string }>();
-  const { isPending, isError, data: cards, error } = useReviews(deckId);
+
+  const allDueCardsQuery = useAllDueCards();
+  const deckDueCardsQuery = useDeckDueCards(deckId);
+
+  const { isPending, isError, data: cards, error } = deckId ? deckDueCardsQuery : allDueCardsQuery;
   const reviewCardMutation = useReviewCard();
 
   const handleReview = (grade: number) => {
@@ -14,7 +20,7 @@ const ReviewSession: React.FC = () => {
       reviewCardMutation.mutate({
         cardId: cards[0].id,
         grade,
-        deckId: deckId || cards[0].deckId, // Use the URL deckId if available, otherwise use the card's deckId
+        deckIds: deckId ? [deckId] : cards[0].decks.map((deck) => deck.id),
       });
     }
   };
@@ -24,13 +30,14 @@ const ReviewSession: React.FC = () => {
       {isPending ? (
         <div className="text-xl text-gray-600">Loading cards...</div>
       ) : isError ? (
-        <div className="text-xl text-red-600">
-          An error occurred: {error?.message}
-        </div>
+        <div className="text-xl text-red-600">An error occurred: {error?.message}</div>
       ) : !cards || cards.length === 0 ? (
         <div className="text-xl text-gray-600">No cards due for review</div>
       ) : (
-        <Flashcard key={cards[0].id} card={cards[0]} onReview={handleReview} />
+        <>
+          {!deckId ? <div className="m-2 text-sm text-gray-500">{renderDeckInfo(cards[0].decks)}</div> : null}
+          <Flashcard key={cards[0].id} card={cards[0]} onReview={handleReview} />
+        </>
       )}
     </div>
   );

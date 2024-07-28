@@ -1,11 +1,13 @@
 // src/hooks/useDeleteCard.ts
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../supabaseClient';
+import { Card } from '../../types';
+import { API_BASE_URL } from '../../config';
+import { DeckDueCount } from '../useDecksDueCounts';
 
 interface DeleteCardParams {
   cardId: string;
-  deckId?: string; // Make deckId optional
+  deckId: string;
 }
 
 const deleteCard = async ({ cardId }: DeleteCardParams): Promise<void> => {
@@ -14,7 +16,7 @@ const deleteCard = async ({ cardId }: DeleteCardParams): Promise<void> => {
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
 
-  const response = await fetch(`http://localhost:3001/api/cards/${cardId}`, {
+  const response = await fetch(`${API_BASE_URL}/cards/${cardId}`, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${session.access_token}`,
@@ -22,7 +24,8 @@ const deleteCard = async ({ cardId }: DeleteCardParams): Promise<void> => {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to delete card');
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete card');
   }
 };
 
@@ -32,43 +35,36 @@ export const useDeleteCard = () => {
   return useMutation({
     mutationFn: deleteCard,
     onMutate: async ({ cardId, deckId }: DeleteCardParams) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: deckId ? ['cards', deckId] : ['cards'],
-      });
+      await queryClient.cancelQueries({ queryKey: ['cards', deckId] });
+      await queryClient.cancelQueries({ queryKey: ['decks', 'dueCounts'] });
 
-      // Snapshot the previous value
-      const previousCards = queryClient.getQueryData<any[]>(
-        deckId ? ['cards', deckId] : ['cards']
-      );
+      const previousCards = queryClient.getQueryData<Card[]>(['cards', deckId]);
+      const previousDueCounts = queryClient.getQueryData<DeckDueCount[]>(['decks', 'dueCounts']);
 
-      // Optimistically update to the new value
-      queryClient.setQueryData<any[]>(
-        deckId ? ['cards', deckId] : ['cards'],
-        (old) => {
-          return old ? old.filter((card) => card.id !== cardId) : [];
-        }
-      );
+      queryClient.setQueryData<Card[]>(['cards', deckId], (old = []) => old.filter((card) => card.id !== cardId));
 
-      // Return a context object with the snapshotted value
-      return { previousCards, deckId };
-    },
-    onError: (_, variables, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(
-        context?.deckId ? ['cards', context.deckId] : ['cards'],
-        context?.previousCards
-      );
-    },
-    onSettled: (_, __, variables, context) => {
-      // Always refetch after error or success:
-      if (context?.deckId) {
-        queryClient.invalidateQueries({ queryKey: ['cards', context.deckId] });
+      const cardToDelete = previousCards?.find((card) => card.id === cardId);
+      if (cardToDelete && new Date(cardToDelete.nextReview) <= new Date()) {
+        queryClient.setQueryData<DeckDueCount[]>(['decks', 'dueCounts'], (old = []) =>
+          old.map((deck) => (deck.id === deckId ? { ...deck, dueCount: Math.max(0, deck.dueCount - 1) } : deck))
+        );
       }
-      // Always invalidate the all-cards query
-      queryClient.invalidateQueries({ queryKey: ['cards'] });
-      // Invalidate deck due counts
+
+      return { previousCards, previousDueCounts, deckId };
+    },
+    onError: (_, __, context) => {
+      if (context?.previousCards) {
+        queryClient.setQueryData(['cards', context.deckId], context.previousCards);
+      }
+      if (context?.previousDueCounts) {
+        queryClient.setQueryData(['decks', 'dueCounts'], context.previousDueCounts);
+      }
+    },
+    onSettled: (_, __, { deckId }) => {
+      queryClient.invalidateQueries({ queryKey: ['cards', deckId] });
       queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
+      queryClient.invalidateQueries({ queryKey: ['cards', 'due'] });
+      queryClient.invalidateQueries({ queryKey: ['cards', 'due', deckId] });
     },
   });
 };

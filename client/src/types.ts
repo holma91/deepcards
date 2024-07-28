@@ -1,6 +1,6 @@
 export interface Card {
   id: string;
-  deckId: string;
+  decks: { id: string; name: string }[];
   userId: string;
   front: string;
   back: string;

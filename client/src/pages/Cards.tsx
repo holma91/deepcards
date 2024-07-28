@@ -1,15 +1,11 @@
 // src/components/Cards.tsx
 import React from 'react';
-import { useCards } from '../hooks/useCards';
 import CardTable from '../components/CardTable';
 import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
+import { useAllCards } from '../hooks/useAllCards';
 
 const Cards: React.FC = () => {
-  const {
-    data: cards,
-    isLoading: isLoadingCards,
-    error: cardsError,
-  } = useCards(); // This now fetches cards from all decks
+  const { data: cards, isLoading: isLoadingCards, error: cardsError } = useAllCards();
   const deleteCardMutation = useDeleteCard();
 
   const handleDeleteCard = (cardId: string) => {
@@ -30,13 +26,11 @@ const Cards: React.FC = () => {
     <div className="w-full px-6 py-8">
       <h2 className="text-2xl font-bold mb-6">All Cards</h2>
 
-      <div className="w-full bg-white shadow overflow-hidden sm:rounded-lg">
+      <div className="w-full bg-white overflow-hidden sm:rounded-lg">
         {isLoadingCards ? (
           <div className="px-4 py-5 sm:p-6">Loading cards...</div>
         ) : cardsError ? (
-          <div className="px-4 py-5 sm:p-6">
-            Error loading cards: {(cardsError as Error).message}
-          </div>
+          <div className="px-4 py-5 sm:p-6">Error loading cards: {(cardsError as Error).message}</div>
         ) : cards && cards.length > 0 ? (
           <CardTable cards={cards} onDeleteCard={handleDeleteCard} />
         ) : (

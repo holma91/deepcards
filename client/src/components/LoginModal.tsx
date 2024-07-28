@@ -1,4 +1,3 @@
-// src/components/LoginModal.tsx
 import React, { useCallback, useEffect } from 'react';
 import { useLoginWithGoogle } from '../hooks/useLoginWithGoogle';
 

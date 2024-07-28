@@ -1,28 +1,7 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { supabase } from '../supabaseClient';
-
-export function toCamelCase(str: string): string {
-  return str.replace(/([-_][a-z])/g, (group) =>
-    group.toUpperCase().replace('-', '').replace('_', '')
-  );
-}
-
-export function keysToCamelCase(obj: any): any {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((v) => keysToCamelCase(v));
-  }
-
-  return Object.keys(obj).reduce((result: any, key) => {
-    const camelKey = toCamelCase(key);
-    result[camelKey] = keysToCamelCase(obj[key]);
-    return result;
-  }, {});
-}
+import { keysToCamelCase } from '../utils';
 
 const router = express.Router();
 
@@ -83,55 +62,6 @@ router.get('/stats', authenticateUser, async (req, res) => {
   }
 });
 
-// Get all decks for the user
-router.get('/decks', authenticateUser, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('decks')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .order('name');
-
-    if (error) throw error;
-    res.json(keysToCamelCase(data));
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch decks' });
-  }
-});
-
-router.post('/decks', authenticateUser, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  const { id, name } = req.body;
-
-  if (!id || !name || typeof name !== 'string' || name.trim() === '') {
-    return res.status(400).json({ error: 'Invalid deck data' });
-  }
-
-  try {
-    const { data: newDeck, error } = await supabase
-      .from('decks')
-      .insert({ id, user_id: req.user.id, name: name.trim() })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    res.status(201).json(keysToCamelCase(newDeck));
-  } catch (error) {
-    console.error('Error creating deck:', error);
-    res.status(500).json({ error: 'Failed to create deck' });
-  }
-});
-
 // Get cards due for review (across all decks)
 router.get('/due', authenticateUser, async (req, res) => {
   if (!req.user) {
@@ -141,14 +71,29 @@ router.get('/due', authenticateUser, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('cards')
-      .select('*')
+      .select(
+        `
+        *,
+        card_decks!inner(
+          deck:decks(id, name)
+        )
+      `
+      )
       .eq('user_id', req.user.id)
       .lte('next_review', new Date().toISOString())
       .order('next_review');
 
     if (error) throw error;
-    res.json(keysToCamelCase(data));
+
+    // Process the data to format it correctly
+    const formattedData = data.map((card) => ({
+      ...keysToCamelCase(card),
+      decks: card.card_decks.map((cd: any) => keysToCamelCase(cd.deck)),
+    }));
+
+    res.json(formattedData);
   } catch (error) {
+    console.error('Error fetching due cards:', error);
     res.status(500).json({ error: 'Failed to fetch due cards' });
   }
 });
@@ -181,56 +126,7 @@ router.get('/deck/:deckId', authenticateUser, async (req, res) => {
   }
 });
 
-// Delete a deck
-router.delete('/decks/:deckId', authenticateUser, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  const { deckId } = req.params;
-
-  try {
-    const { error } = await supabase
-      .from('decks')
-      .delete()
-      .eq('id', deckId)
-      .eq('user_id', req.user.id);
-
-    if (error) throw error;
-    res.json({ message: 'Deck deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete deck' });
-  }
-});
-
-router.patch('/decks/:deckId', authenticateUser, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  const { deckId } = req.params;
-  const { name } = req.body;
-
-  if (!name) {
-    return res.status(400).json({ error: 'New name is required' });
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('decks')
-      .update({ name })
-      .eq('id', deckId)
-      .eq('user_id', req.user.id)
-      .single();
-
-    if (error) throw error;
-
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update deck name' });
-  }
-});
-
+// Get all cards in a specific deck that are due for review
 router.get('/deck/:deckId/due', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -259,6 +155,7 @@ router.get('/deck/:deckId/due', authenticateUser, async (req, res) => {
   }
 });
 
+// Get the number of cards due for review in each deck
 router.get('/decks/due-counts', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -296,6 +193,7 @@ router.get('/decks/due-counts', authenticateUser, async (req, res) => {
   }
 });
 
+// Get all cards for the authenticated user
 router.get('/', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -333,6 +231,7 @@ router.get('/', authenticateUser, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch cards' });
   }
 });
+
 // Create a new card and add it to a deck
 router.post('/', authenticateUser, async (req, res) => {
   if (!req.user) {
@@ -363,6 +262,7 @@ router.post('/', authenticateUser, async (req, res) => {
   }
 });
 
+// Delete a card
 router.delete('/:cardId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -402,6 +302,7 @@ router.delete('/:cardId', authenticateUser, async (req, res) => {
   }
 });
 
+// Update a reviewed card
 router.post('/:id/review', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });

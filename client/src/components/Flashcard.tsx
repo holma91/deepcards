@@ -8,6 +8,21 @@ interface FlashcardProps {
   onReview: (grade: number) => void;
 }
 
+const getNextReviewTime = (grade: number) => {
+  switch (grade) {
+    case 1:
+      return '<10m';
+    case 2:
+      return '1h';
+    case 3:
+      return '1d';
+    case 4:
+      return '4d';
+    default:
+      return '';
+  }
+};
+
 const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [focusedGrade, setFocusedGrade] = useState<number | null>(null);
@@ -42,21 +57,6 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
     }
   }, [isRevealed]);
 
-  const getNextReviewTime = (grade: number) => {
-    switch (grade) {
-      case 1:
-        return '<10m';
-      case 2:
-        return '1h';
-      case 3:
-        return '1d';
-      case 4:
-        return '4d';
-      default:
-        return '';
-    }
-  };
-
   const handleFocus = (grade: number) => {
     setFocusedGrade(grade);
   };
@@ -75,12 +75,14 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
         </div>
         {isRevealed && (
           <>
-            <div className="mt-4 pt-4 border-t border-gray-200 w-full">
-              <div className="markdown-content">
-                <ReactMarkdown>{card.back}</ReactMarkdown>
+            <div className="mt-4 pt-2 border-t border-gray-200 w-full">
+              <div className="text-xl text-center">
+                <div className="markdown-content">
+                  <ReactMarkdown>{card.back}</ReactMarkdown>
+                </div>
               </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-6">
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
               {[
                 { label: 'Again', grade: 1 },
                 { label: 'Hard', grade: 2 },
@@ -98,9 +100,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
                   }`}
                 >
                   <span>{label}</span>
-                  <span className="text-xs mt-1 text-gray-500">
-                    {getNextReviewTime(grade)}
-                  </span>
+                  <span className="text-xs mt-1 text-gray-500">{getNextReviewTime(grade)}</span>
                 </button>
               ))}
             </div>
