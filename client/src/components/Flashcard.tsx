@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Card } from '../types';
 import '../markdown.css';
+import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
 
 interface FlashcardProps {
   card: Card;
@@ -24,29 +25,45 @@ const getNextReviewTime = (grade: number) => {
 };
 
 const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
+  const { isCreateDeckModalOpen } = useKeyboardShortcuts();
   const [isRevealed, setIsRevealed] = useState(false);
   const [focusedGrade, setFocusedGrade] = useState<number | null>(null);
   const showAnswerRef = useRef<HTMLButtonElement>(null);
   const goodButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (isCreateDeckModalOpen) return;
+
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.code === 'Space') {
+      console.log(event);
+      if (event.code === 'Space' || event.code === 'Enter') {
         event.preventDefault();
         if (!isRevealed) {
           setIsRevealed(true);
         } else if (focusedGrade !== null) {
           onReview(focusedGrade);
         }
+      } else if (isRevealed) {
+        if (event.key >= '1' && event.key <= '4') {
+          const grade = parseInt(event.key);
+          setFocusedGrade(grade);
+          onReview(grade);
+        } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+          event.preventDefault();
+          setFocusedGrade((prev) => {
+            if (prev === null) return 3; // Default to 'Good'
+            return event.code === 'ArrowLeft' ? Math.max(1, prev - 1) : Math.min(4, prev + 1);
+          });
+        } else if (event.code === 'Escape') {
+          setIsRevealed(false);
+          setFocusedGrade(null);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [isRevealed, onReview, focusedGrade]);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isRevealed, onReview, focusedGrade, isCreateDeckModalOpen]);
 
   useEffect(() => {
     if (!isRevealed && showAnswerRef.current) {

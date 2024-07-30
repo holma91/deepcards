@@ -10,14 +10,17 @@ import { useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import PublicHome from './pages/PublicHome';
 import DeckCards from './pages/DeckCards';
+import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    <KeyboardShortcutProvider>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
+    </KeyboardShortcutProvider>
   );
 }
 

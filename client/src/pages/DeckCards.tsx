@@ -22,6 +22,8 @@ const DeckCards: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
 
+  const frontTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   const { data: deck, isLoading: isDeckLoading } = useDeck(deckId);
   const { data: cards, isLoading: isCardsLoading, error: cardsError } = useDeckCards(deckId);
 
@@ -30,7 +32,7 @@ const DeckCards: React.FC = () => {
   const deleteCardMutation = useDeleteCard();
   const deleteDeckMutation = useDeleteDeck();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     if (deckId && deck) {
       if (editingCard) {
@@ -66,6 +68,16 @@ const DeckCards: React.FC = () => {
     setBackContent('');
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      handleSubmit(event as any);
+      if (frontTextareaRef.current) {
+        frontTextareaRef.current.focus();
+      }
+    }
+  };
+
   const handleDeleteCard = (cardId: string) => {
     if (deckId) {
       deleteCardMutation.mutate(
@@ -99,6 +111,28 @@ const DeckCards: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && editingCard) {
+        handleCancel();
+      }
+    };
+
+    if (editingCard) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [editingCard]);
+
+  useEffect(() => {
+    if (editingCard && frontTextareaRef.current) {
+      frontTextareaRef.current.focus();
+    }
+  }, [editingCard]);
+
   const renderDeckName = () => {
     if (isDeckLoading) {
       return <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>;
@@ -109,9 +143,21 @@ const DeckCards: React.FC = () => {
   const renderCardForm = () => (
     <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 mb-4">
       <div className="flex-1 flex flex-col">
-        <MarkdownTextarea value={frontContent} onChange={setFrontContent} placeholder="Front (supports markdown)" />
+        <MarkdownTextarea
+          ref={frontTextareaRef}
+          value={frontContent}
+          onChange={setFrontContent}
+          placeholder="Front (supports markdown)"
+          onKeyDown={handleKeyDown}
+        />
+
         <div className="h-2"></div>
-        <MarkdownTextarea value={backContent} onChange={setBackContent} placeholder="Back (supports markdown)" />
+        <MarkdownTextarea
+          value={backContent}
+          onChange={setBackContent}
+          placeholder="Back (supports markdown)"
+          onKeyDown={handleKeyDown}
+        />
         <div className="h-2"></div>
         <div className="flex gap-2">
           {editingCard && (

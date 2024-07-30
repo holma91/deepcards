@@ -1,4 +1,3 @@
-// src/components/CreateDeckModal.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useCreateDeck } from '../hooks/mutations/useCreateDeck';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,7 +12,14 @@ const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ isOpen, onClose }) =>
   const [newDeckName, setNewDeckName] = useState('');
   const createDeckMutation = useCreateDeck();
   const modalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,10 +53,18 @@ const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ isOpen, onClose }) =>
         {
           onSuccess: () => {
             navigate(`/cards/${newDeckId}`);
+            setNewDeckName('');
+            onClose();
           },
         }
       );
-      onClose();
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      handleCreateDeck();
     }
   };
 
@@ -61,9 +75,11 @@ const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ isOpen, onClose }) =>
       <div ref={modalRef} className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
         <h2 className="text-2xl font-bold mb-4">Create New Deck</h2>
         <input
+          ref={inputRef}
           type="text"
           value={newDeckName}
           onChange={(e) => setNewDeckName(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Deck name"
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-4"
         />

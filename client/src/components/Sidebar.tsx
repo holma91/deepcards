@@ -4,14 +4,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDecksDueCounts } from '../hooks/useDecksDueCounts';
 import { useDecks } from '../hooks/useDecks';
 import CreateDeckModal from './CreateDeckModal';
+import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isCreateDeckModalOpen, setCreateDeckModalOpen } = useKeyboardShortcuts();
 
   const [isReviewExpanded, setIsReviewExpanded] = useState(true);
   const [isCardsExpanded, setIsCardsExpanded] = useState(true);
-  const [isCreateDeckModalOpen, setIsCreateDeckModalOpen] = useState(false);
 
   const { data: decksDueCounts, isLoading: isLoadingDueCounts, error: dueCountsError } = useDecksDueCounts();
   const { data: allDecks, isLoading: isLoadingDecks, error: decksError } = useDecks();
@@ -36,6 +37,14 @@ const Sidebar: React.FC = () => {
     } else {
       navigate('/cards');
     }
+  };
+
+  const handleOpenCreateDeckModal = () => {
+    setCreateDeckModalOpen(true);
+  };
+
+  const handleCloseCreateDeckModal = () => {
+    setCreateDeckModalOpen(false);
   };
 
   return (
@@ -127,7 +136,7 @@ const Sidebar: React.FC = () => {
               <ul className="ml-6">
                 <li>
                   <button
-                    onClick={() => setIsCreateDeckModalOpen(true)}
+                    onClick={handleOpenCreateDeckModal}
                     className="w-full text-left px-4 py-2 text-blue-600 hover:text-blue-800 focus:outline-none"
                   >
                     + New Deck
@@ -156,7 +165,7 @@ const Sidebar: React.FC = () => {
           </li>
         </ul>
       </nav>
-      <CreateDeckModal isOpen={isCreateDeckModalOpen} onClose={() => setIsCreateDeckModalOpen(false)} />
+      <CreateDeckModal isOpen={isCreateDeckModalOpen} onClose={handleCloseCreateDeckModal} />
     </>
   );
 };
