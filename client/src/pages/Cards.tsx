@@ -10,7 +10,7 @@ const Cards: React.FC = () => {
 
   const handleDeleteCard = (cardId: string) => {
     deleteCardMutation.mutate(
-      { cardId },
+      { cardId, deckId: '' },
       {
         onSuccess: () => {
           console.log('Card deleted successfully');

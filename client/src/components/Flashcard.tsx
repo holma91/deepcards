@@ -68,16 +68,16 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   return (
     <div className="w-full max-w-2xl flex flex-col items-center justify-center">
       <div className="w-full p-6 bg-white rounded-lg">
-        <div className="text-2xl mb-4 font-semibold text-center">
-          <div className="markdown-content">
+        <div className="text-2xl mb-4 font-semibold flex justify-center">
+          <div className="markdown-content text-left">
             <ReactMarkdown>{card.front}</ReactMarkdown>
           </div>
         </div>
         {isRevealed && (
           <>
             <div className="mt-4 pt-2 border-t border-gray-200 w-full">
-              <div className="text-xl text-center">
-                <div className="markdown-content">
+              <div className="text-xl flex justify-center">
+                <div className="markdown-content text-left">
                   <ReactMarkdown>{card.back}</ReactMarkdown>
                 </div>
               </div>

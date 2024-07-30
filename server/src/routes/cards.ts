@@ -262,6 +262,32 @@ router.post('/', authenticateUser, async (req, res) => {
   }
 });
 
+// Update an existing card
+router.put('/:id', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { id } = req.params;
+  const { front, back } = req.body;
+
+  try {
+    const { data: card, error } = await supabase
+      .from('cards')
+      .update({ front, back })
+      .eq('id', id)
+      .eq('user_id', req.user.id)
+      .select()
+      .single();
+
+    if (error || !card) throw error || new Error('Failed to update card');
+
+    res.status(200).json(keysToCamelCase(card));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update card' });
+  }
+});
+
 // Delete a card
 router.delete('/:cardId', authenticateUser, async (req, res) => {
   if (!req.user) {

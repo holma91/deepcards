@@ -8,6 +8,10 @@ import { useDeleteDeck } from '../hooks/mutations/useDeleteDeck';
 import { useDeck } from '../hooks/useDeck';
 import { useUpdateDeckName } from '../hooks/mutations/useUpdateDeckName';
 import { useDeckCards } from '../hooks/useDeckCards';
+import CardPreview from '../components/CardPreview';
+import MarkdownTextarea from '../components/MarkdownTextArea';
+import { Card } from '../types';
+import { useUpdateCard } from '../hooks/mutations/useUpdateCard';
 
 const DeckCards: React.FC = () => {
   const navigate = useNavigate();
@@ -16,26 +20,50 @@ const DeckCards: React.FC = () => {
   const [frontContent, setFrontContent] = useState('');
   const [backContent, setBackContent] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [editingCard, setEditingCard] = useState<Card | null>(null);
 
   const { data: deck, isLoading: isDeckLoading } = useDeck(deckId);
   const { data: cards, isLoading: isCardsLoading, error: cardsError } = useDeckCards(deckId);
 
   const createCardMutation = useCreateCard();
+  const updateCardMutation = useUpdateCard();
   const deleteCardMutation = useDeleteCard();
   const deleteDeckMutation = useDeleteDeck();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (deckId && deck) {
-      createCardMutation.mutate({
-        front: frontContent,
-        back: backContent,
-        deckName: deck.name,
-        deckId,
-      });
+      if (editingCard) {
+        updateCardMutation.mutate({
+          id: editingCard.id,
+          front: frontContent,
+          back: backContent,
+          deckId,
+        });
+      } else {
+        createCardMutation.mutate({
+          front: frontContent,
+          back: backContent,
+          deckName: deck.name,
+          deckId,
+        });
+      }
       setFrontContent('');
       setBackContent('');
+      setEditingCard(null);
     }
+  };
+
+  const handleSelectCard = (card: Card) => {
+    setEditingCard(card);
+    setFrontContent(card.front);
+    setBackContent(card.back);
+  };
+
+  const handleCancel = () => {
+    setEditingCard(null);
+    setFrontContent('');
+    setBackContent('');
   };
 
   const handleDeleteCard = (cardId: string) => {
@@ -79,42 +107,35 @@ const DeckCards: React.FC = () => {
   };
 
   const renderCardForm = () => (
-    <form onSubmit={handleSubmit} className="">
-      <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
-        <div className="flex-1">
-          <label htmlFor="front" className="block text-sm font-medium text-gray-700 mb-1">
-            Front
-          </label>
-          <textarea
-            id="front"
-            value={frontContent}
-            onChange={(e) => setFrontContent(e.target.value)}
-            className="w-full border border-gray-300 rounded-md shadow-sm resize-none p-2 focus:ring-black focus:border-black"
-            rows={3}
-            placeholder="Enter the front content of the card"
-          />
-        </div>
-        <div className="flex-1">
-          <label htmlFor="back" className="block text-sm font-medium text-gray-700 mb-1">
-            Back
-          </label>
-          <textarea
-            id="back"
-            value={backContent}
-            onChange={(e) => setBackContent(e.target.value)}
-            className="w-full border border-gray-300 rounded-md shadow-sm resize-none p-2 focus:ring-black focus:border-black"
-            rows={3}
-            placeholder="Enter the back content of the card"
-          />
+    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 mb-4">
+      <div className="flex-1 flex flex-col">
+        <MarkdownTextarea value={frontContent} onChange={setFrontContent} placeholder="Front (supports markdown)" />
+        <div className="h-2"></div>
+        <MarkdownTextarea value={backContent} onChange={setBackContent} placeholder="Back (supports markdown)" />
+        <div className="h-2"></div>
+        <div className="flex gap-2">
+          {editingCard && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            disabled={!frontContent || !backContent}
+            type="submit"
+            className={`${
+              editingCard ? 'flex-1' : 'w-full'
+            } px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition duration-150 ease-in-out`}
+          >
+            {editingCard ? 'Edit Card' : 'Add Card'}
+          </button>
         </div>
       </div>
-      <div className="my-4 flex justify-end">
-        <button
-          type="submit"
-          className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition duration-150 ease-in-out"
-        >
-          Add card
-        </button>
+      <div className="flex-1">
+        <CardPreview front={frontContent} back={backContent} />
       </div>
     </form>
   );
@@ -135,7 +156,7 @@ const DeckCards: React.FC = () => {
     if (!cards || cards.length === 0) {
       return <div>No cards in this deck yet.</div>;
     }
-    return <CardTable cards={cards} onDeleteCard={handleDeleteCard} />;
+    return <CardTable cards={cards} onDeleteCard={handleDeleteCard} onSelectCard={handleSelectCard} />;
   };
 
   return (
