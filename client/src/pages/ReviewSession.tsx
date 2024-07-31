@@ -4,7 +4,6 @@ import Flashcard from '../components/Flashcard';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
 import { useAllDueCards } from '../hooks/useAllDueCards';
 import { useDeckDueCards } from '../hooks/useDeckDueCards';
-import renderDeckInfo from '../utils/renderDeckInfo';
 
 const ReviewSession: React.FC = () => {
   const { deckId } = useParams<{ deckId?: string }>();
@@ -25,20 +24,15 @@ const ReviewSession: React.FC = () => {
     }
   };
 
+  if (isPending) return <div className="text-xl text-gray-600">Loading cards...</div>;
+  if (isError) return <div className="text-xl text-red-600">An error occurred: {error?.message}</div>;
+  if (!cards || cards.length === 0) return <div className="text-xl text-gray-600">No cards due for review</div>;
+
   return (
-    <div className="flex flex-col items-center justify-center h-full px-6 max-w-4xl mx-auto">
-      {isPending ? (
-        <div className="text-xl text-gray-600">Loading cards...</div>
-      ) : isError ? (
-        <div className="text-xl text-red-600">An error occurred: {error?.message}</div>
-      ) : !cards || cards.length === 0 ? (
-        <div className="text-xl text-gray-600">No cards due for review</div>
-      ) : (
-        <>
-          {!deckId ? <div className="m-2 text-sm text-gray-500">{renderDeckInfo(cards[0].decks)}</div> : null}
-          <Flashcard key={cards[0].id} card={cards[0]} onReview={handleReview} />
-        </>
-      )}
+    <div className="h-[calc(100vh-64px)] flex flex-col">
+      <div className="flex-grow flex items-center justify-center px-6">
+        <Flashcard key={cards[0].id} card={cards[0]} onReview={handleReview} />
+      </div>
     </div>
   );
 };

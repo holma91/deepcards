@@ -4,7 +4,7 @@ interface Deck {
 }
 
 const renderDeckInfo = (decks: Deck[]) => {
-  if (decks.length <= 0) {
+  if (!decks || decks.length <= 0) {
     return null;
   }
 
