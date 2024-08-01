@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Card } from '../types';
+import { Card, Message } from '../types';
 import '../markdown.css';
 import ChatInterface from './ChatInterface';
 import renderDeckInfo from '../utils/renderDeckInfo';
@@ -8,6 +8,8 @@ import renderDeckInfo from '../utils/renderDeckInfo';
 interface FlashcardProps {
   card: Card;
   onReview: (grade: number) => void;
+  chatMessages: Message[];
+  setChatMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 const getNextReviewTime = (grade: number) => {
@@ -25,63 +27,70 @@ const getNextReviewTime = (grade: number) => {
   }
 };
 
-const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ card, onReview, chatMessages, setChatMessages }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [focusedGrade, setFocusedGrade] = useState<number | null>(null);
-  const showAnswerRef = useRef<HTMLButtonElement>(null);
-  const goodButtonRef = useRef<HTMLButtonElement>(null);
+  const [lastFocusedGrade, setLastFocusedGrade] = useState<number | null>(null);
+  const gradeButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+  const handleKeyNavigation = (event: KeyboardEvent) => {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      return;
+    }
 
-      if (isRevealed) {
-        if (event.key >= '1' && event.key <= '4') {
-          const grade = parseInt(event.key);
-          setFocusedGrade(grade);
-          onReview(grade);
-        } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
-          event.preventDefault();
-          setFocusedGrade((prev) => {
-            if (prev === null) return 3;
-            return event.code === 'ArrowLeft' ? Math.max(1, prev - 1) : Math.min(4, prev + 1);
-          });
-        } else if (event.code === 'Escape') {
-          setIsRevealed(false);
-          setFocusedGrade(null);
-        }
+    if (isRevealed) {
+      if (event.key >= '1' && event.key <= '4') {
+        const grade = parseInt(event.key);
+        setFocusedGrade(grade);
+        onReview(grade);
+      } else if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+        event.preventDefault();
+        setFocusedGrade((prev) => {
+          if (prev === null) return 3;
+          return event.code === 'ArrowLeft' ? Math.max(1, prev - 1) : Math.min(4, prev + 1);
+        });
       } else if (event.code === 'Space' || event.code === 'Enter') {
         event.preventDefault();
-        setIsRevealed(true);
+        if (focusedGrade !== null) {
+          onReview(focusedGrade);
+        }
       }
-
-      if (event.code === 'KeyD') {
-        setShowChat(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isRevealed, onReview, focusedGrade]);
-
-  useEffect(() => {
-    if (!isRevealed && showAnswerRef.current) {
-      showAnswerRef.current.focus();
-    } else if (isRevealed && goodButtonRef.current) {
-      goodButtonRef.current.focus();
-      setFocusedGrade(3);
+    } else if (event.code === 'Space' || event.code === 'Enter') {
+      event.preventDefault();
+      setIsRevealed(true);
     }
-  }, [isRevealed]);
 
-  const handleFocus = (grade: number) => {
-    setFocusedGrade(grade);
+    if (event.code === 'KeyD') {
+      event.preventDefault();
+      setLastFocusedGrade(focusedGrade);
+      setShowChat(true);
+    }
   };
 
-  const handleBlur = () => {
-    setFocusedGrade(null);
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyNavigation);
+    return () => window.removeEventListener('keydown', handleKeyNavigation);
+  }, [isRevealed, focusedGrade, onReview]);
+
+  useEffect(() => {
+    if (isRevealed && !showChat) {
+      setFocusedGrade((prev) => prev || 3); // Default to 'Good' if not set
+      // Focus the correct button when returning from chat
+      if (lastFocusedGrade !== null) {
+        const buttonToFocus = gradeButtonsRef.current[lastFocusedGrade - 1];
+        buttonToFocus?.focus();
+        setFocusedGrade(lastFocusedGrade);
+        setLastFocusedGrade(null);
+      }
+    } else if (!isRevealed) {
+      setFocusedGrade(null);
+    }
+  }, [isRevealed, showChat, lastFocusedGrade]);
+
+  const handleGradeClick = (grade: number) => {
+    setFocusedGrade(grade);
+    onReview(grade);
   };
 
   const handleCloseChat = () => {
@@ -109,14 +118,16 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
         {!isRevealed ? (
           <div className="flex justify-center mt-4 space-x-4">
             <button
-              ref={showAnswerRef}
               onClick={() => setIsRevealed(true)}
               className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
-              Show Answer (Space)
+              Show Answer (Space/Enter)
             </button>
             <button
-              onClick={() => setShowChat(true)}
+              onClick={() => {
+                setLastFocusedGrade(focusedGrade);
+                setShowChat(true);
+              }}
               className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 relative group"
             >
               Deep Dive (D)
@@ -136,22 +147,26 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
               ].map(({ label, grade }) => (
                 <button
                   key={label}
-                  onClick={() => onReview(grade)}
-                  ref={label === 'Good' ? goodButtonRef : null}
-                  onFocus={() => handleFocus(grade)}
-                  onBlur={handleBlur}
-                  className={`px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors flex flex-col items-center focus:outline-none ${
+                  onClick={() => handleGradeClick(grade)}
+                  className={`px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors flex flex-col items-center ${
                     focusedGrade === grade ? 'ring-2 ring-gray-500' : ''
                   }`}
+                  aria-pressed={focusedGrade === grade}
                 >
                   <span>{label}</span>
                   <span className="text-xs mt-1 text-gray-500">{getNextReviewTime(grade)}</span>
                 </button>
               ))}
             </div>
+            <div className="text-center mt-2 text-sm text-gray-500">
+              Use arrow keys to navigate, Space/Enter to select
+            </div>
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => setShowChat(true)}
+                onClick={() => {
+                  setLastFocusedGrade(focusedGrade);
+                  setShowChat(true);
+                }}
                 className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 relative group"
               >
                 Deep Dive (D)
@@ -169,7 +184,13 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
       {showChat ? (
-        <ChatInterface card={card} isRevealed={isRevealed} onClose={handleCloseChat} />
+        <ChatInterface
+          card={card}
+          isRevealed={isRevealed}
+          onClose={handleCloseChat}
+          messages={chatMessages}
+          setMessages={setChatMessages}
+        />
       ) : (
         <div className="flex-grow flex items-center justify-center px-6">{renderFlashcard()}</div>
       )}

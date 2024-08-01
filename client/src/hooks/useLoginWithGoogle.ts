@@ -1,6 +1,6 @@
 // src/hooks/useLoginWithGoogle.ts
 import { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../utils/supabaseClient';
 
 export const useLoginWithGoogle = () => {
   const [loading, setLoading] = useState(false);

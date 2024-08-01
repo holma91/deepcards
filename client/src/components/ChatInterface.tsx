@@ -1,28 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Card } from '../types';
+import { Card, Message } from '../types';
 import '../markdown.css';
 import renderDeckInfo from '../utils/renderDeckInfo';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { useChat } from '../hooks/mutations/useChat';
 
 interface ChatInterfaceProps {
   card: Card;
   isRevealed: boolean;
   onClose: () => void;
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'How can I help you with this flashcard?' },
-  ]);
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose, messages, setMessages }) => {
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const chatMutation = useChat();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,17 +40,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
     };
   }, [onClose]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+      textareaRef.current?.focus();
+    }
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      setMessages([...messages, { role: 'user', content: input }]);
+      const userMessage: Message = { role: 'user', content: input };
+      const newMessages = [...messages, userMessage];
+      setMessages(newMessages);
       setInput('');
-      setIsTyping(true);
-      // Simulate API call
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { role: 'assistant', content: 'This is a dummy response.' }]);
-        setIsTyping(false);
-      }, 1000);
+
+      const cardContent = `
+          Front: ${card.front}
+          Back: ${card.back}
+          Note: The back of the card is ${isRevealed ? 'revealed' : 'not revealed'} to the user.
+      `;
+
+      console.log('Card Content for LLM:', cardContent); // For debugging
+      console.log('Messages for LLM:', newMessages); // For debugging
+
+      try {
+        const result = await chatMutation.mutateAsync({
+          cardContent: cardContent,
+          messages: newMessages.slice(1), // Exclude the initial greeting
+        });
+
+        const assistantMessage: Message = { role: 'assistant', content: result.response };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error('Error:', error);
+        const errorMessage: Message = {
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again.',
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
     }
   };
 
@@ -73,7 +97,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-3xl mx-auto">
+    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
       <div className="flex justify-between items-center p-4 bg-white shadow-sm">
         <button
           onClick={onClose}
@@ -126,13 +150,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
             </div>
           </div>
         ))}
-        {isTyping && (
-          <div className="text-left">
-            <div className="inline-block max-w-[80%] p-3 rounded-lg bg-gray-100">
-              <span className="animate-pulse">Typing...</span>
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -149,20 +166,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
             className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
             placeholder="Type your message..."
             rows={1}
+            disabled={chatMutation.isPending}
           />
           <button
             type="submit"
-            className="ml-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            className={`ml-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 ${
+              chatMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={chatMutation.isPending}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
+            {chatMutation.isPending ? (
+              <span className="animate-pulse">...</span>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
+            )}
           </button>
         </form>
       </div>

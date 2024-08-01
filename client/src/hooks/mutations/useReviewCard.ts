@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../utils/supabaseClient';
 import { Card } from '../../types';
 import { DeckDueCount } from '../useDecksDueCounts';
 import { API_BASE_URL } from '../../config';

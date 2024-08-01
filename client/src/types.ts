@@ -19,3 +19,8 @@ export interface Deck {
 export interface DeckWithCards extends Deck {
   cards: Card[];
 }
+
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}

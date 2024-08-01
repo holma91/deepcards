@@ -1,6 +1,6 @@
 // src/hooks/useDeckCards.ts
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../utils/supabaseClient';
 import { API_BASE_URL } from '../config';
 import { Card } from '../types';
 
