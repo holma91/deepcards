@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDecksDueCounts } from '../hooks/useDecksDueCounts';
 import { useDecks } from '../hooks/useDecks';
-import CreateDeckModal from './CreateDeckModal';
+import CreateDeckModal from './modals/CreateDeckModal';
 import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
 
 const Sidebar: React.FC = () => {
