@@ -8,7 +8,7 @@ interface Message {
 }
 
 interface ChatParams {
-  cardContent: string;
+  cardContent?: string;
   messages: Message[];
 }
 

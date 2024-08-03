@@ -11,24 +11,35 @@ router.post('', authenticateUser, async (req, res) => {
 
   const { cardContent, messages } = req.body;
 
-  if (!cardContent || !messages || !Array.isArray(messages)) {
-    return res
-      .status(400)
-      .json({ error: 'Card content and messages array are required' });
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Messages array is required' });
   }
 
   try {
+    let systemMessage = {
+      role: 'system',
+      content: 'You are a helpful assistant for a flashcard application.',
+    };
+
+    if (cardContent) {
+      systemMessage.content +=
+        ' The user will provide you with the content of a flashcard and engage in a conversation about it.';
+    } else {
+      systemMessage.content +=
+        ' The user will engage in a general conversation about learning and flashcards.';
+    }
+
+    const apiMessages = [
+      systemMessage,
+      ...(cardContent
+        ? [{ role: 'user', content: `Flashcard content: ${cardContent}` }]
+        : []),
+      ...messages,
+    ];
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a helpful assistant for a flashcard application. The user will provide you with the content of a flashcard and engage in a conversation about it.',
-        },
-        { role: 'user', content: `Flashcard content: ${cardContent}` },
-        ...messages,
-      ],
+      messages: apiMessages,
     });
 
     res.json({ response: completion.choices[0].message.content });

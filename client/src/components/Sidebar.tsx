@@ -53,10 +53,10 @@ const Sidebar: React.FC = () => {
         <ul className="mb-3">
           <li>
             <Link
-              to="/"
-              className={`block py-3 px-6 ${isActive('/') ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
+              to="/chat"
+              className={`block py-3 px-6 ${isActive('/chat') ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
             >
-              Dashboard
+              Chat
             </Link>
           </li>
           <li>

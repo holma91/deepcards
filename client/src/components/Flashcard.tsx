@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Card, Message } from '../types';
 import '../markdown.css';
-import ChatInterface from './ChatInterface';
 import renderDeckInfo from '../utils/renderDeckInfo';
+import CardChatInterface from './CardChatInterface';
 
 interface FlashcardProps {
   card: Card;
   onReview: (grade: number) => void;
-  chatMessages: Message[];
-  setChatMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
 const getNextReviewTime = (grade: number) => {
@@ -27,9 +25,12 @@ const getNextReviewTime = (grade: number) => {
   }
 };
 
-const Flashcard: React.FC<FlashcardProps> = ({ card, onReview, chatMessages, setChatMessages }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: 'How can I help you with this flashcard?' },
+  ]);
   const [focusedGrade, setFocusedGrade] = useState<number | null>(null);
   const [lastFocusedGrade, setLastFocusedGrade] = useState<number | null>(null);
   const gradeButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -184,12 +185,12 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview, chatMessages, set
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
       {showChat ? (
-        <ChatInterface
+        <CardChatInterface
           card={card}
           isRevealed={isRevealed}
           onClose={handleCloseChat}
-          messages={chatMessages}
-          setMessages={setChatMessages}
+          messages={messages}
+          setMessages={setMessages}
         />
       ) : (
         <div className="flex-grow flex items-center justify-center px-6">{renderFlashcard()}</div>

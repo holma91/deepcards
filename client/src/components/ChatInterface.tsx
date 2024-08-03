@@ -7,14 +7,22 @@ import { useChat } from '../hooks/mutations/useChat';
 import FlashcardReviewModal from './modals/FlashcardReviewModal';
 
 interface ChatInterfaceProps {
-  card: Card;
-  isRevealed: boolean;
-  onClose: () => void;
+  card?: Card;
+  isRevealed?: boolean;
+  onClose?: () => void;
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  isStandalone?: boolean;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose, messages, setMessages }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  card,
+  isRevealed,
+  onClose,
+  messages,
+  setMessages,
+  isStandalone = false,
+}) => {
   const [input, setInput] = useState('');
   const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
   const [showModal, setShowModal] = useState(false);
@@ -144,14 +152,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
     }
   };
 
-  return (
-    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
+  const renderHeader = () => {
+    if (isStandalone) return null;
+
+    return (
       <div className="flex justify-between items-center p-4 bg-white shadow-sm">
-        <button
-          onClick={onClose}
-          className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none group relative"
-          title="Close chat (Esc)"
-        >
+        <button onClick={onClose} className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -161,14 +167,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
           </svg>
-          <span className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-            Esc to close
-          </span>
         </button>
-        <div className="text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
+        {card && <div className="text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>}
         <div className="w-6"></div>
       </div>
+    );
+  };
 
+  const renderCard = () => {
+    if (!card) return null;
+
+    return (
       <div className="w-full p-6 bg-white mb-4 shadow-sm">
         <div className="text-2xl mb-4 font-semibold flex justify-center">
           <div className="markdown-content text-left">
@@ -185,68 +194,80 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ card, isRevealed, onClose
           </div>
         )}
       </div>
+    );
+  };
 
-      <div className="flex-grow overflow-y-auto p-4 bg-white mb-4">
-        {messages.map((message, index) => (
-          <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-            <div
-              className={`inline-block max-w-[80%] p-3 rounded-lg ${
-                message.role === 'user' ? 'bg-black text-white' : 'bg-gray-100'
-              }`}
-            >
-              <ReactMarkdown>{message.content}</ReactMarkdown>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="p-4 bg-white shadow-sm">
-        <form onSubmit={handleSubmit} className="flex items-end">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              adjustTextareaHeight();
-            }}
-            onKeyDown={handleKeyDown}
-            className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
-            placeholder="Type your message..."
-            rows={1}
-            disabled={chatMutation.isPending}
-          />
-          <button
-            type="submit"
-            className={`ml-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 ${
-              chatMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''
+  const renderMessages = () => (
+    <div className="flex-grow overflow-y-auto p-4 bg-white mb-4">
+      {messages.map((message, index) => (
+        <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+          <div
+            className={`inline-block max-w-[80%] p-3 rounded-lg ${
+              message.role === 'user' ? 'bg-black text-white' : 'bg-gray-100'
             }`}
-            disabled={chatMutation.isPending}
           >
-            {chatMutation.isPending ? (
-              <span className="animate-pulse">...</span>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={handleGenerateFlashcards}
-            className="ml-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            disabled={chatMutation.isPending}
-          >
-            Generate Flashcards
-          </button>
-        </form>
-      </div>
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        </div>
+      ))}
+      <div ref={messagesEndRef} />
+    </div>
+  );
+
+  const renderInputArea = () => (
+    <div className="p-4 bg-white shadow-sm">
+      <form onSubmit={handleSubmit} className="flex items-end">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => {
+            setInput(e.target.value);
+            adjustTextareaHeight();
+          }}
+          onKeyDown={handleKeyDown}
+          className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
+          placeholder="Type your message..."
+          rows={1}
+          disabled={chatMutation.isPending}
+        />
+        <button
+          type="submit"
+          className="ml-2 p-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          disabled={chatMutation.isPending}
+        >
+          {chatMutation.isPending ? (
+            <span className="animate-pulse">...</span>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={handleGenerateFlashcards}
+          className="ml-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          disabled={chatMutation.isPending}
+        >
+          Generate Flashcards
+        </button>
+      </form>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
+      {renderHeader()}
+      {renderCard()}
+      {renderMessages()}
+      {renderInputArea()}
+
       {showModal && (
         <FlashcardReviewModal
           cards={generatedCards}

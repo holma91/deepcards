@@ -11,6 +11,7 @@ import Header from './components/Header';
 import PublicHome from './pages/PublicHome';
 import DeckCards from './pages/DeckCards';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
+import ChatPage from './pages/Chat';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
         <main className={`flex-1 overflow-auto ${session ? 'ml-64' : ''}`}>
           <Routes>
             <Route path="/" element={session ? <Home /> : <PublicHome />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route
               path="/review"
               element={
