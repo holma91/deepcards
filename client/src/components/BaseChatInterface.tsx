@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import TextareaAutosize from 'react-textarea-autosize';
 import { Message } from '../types';
 import '../markdown.css';
 
@@ -7,20 +8,31 @@ interface BaseChatInterfaceProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   onGenerateFlashcards: () => void;
+  inputRef?: React.RefObject<HTMLTextAreaElement>;
+  flashcardContent?: React.ReactNode;
 }
 
-const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({ messages, onSendMessage, onGenerateFlashcards }) => {
-  const [input, setInput] = useState('');
+const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
+  messages,
+  onSendMessage,
+  onGenerateFlashcards,
+  inputRef,
+  flashcardContent,
+}) => {
+  const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    if (inputRef?.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,16 +49,10 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({ messages, onSendM
     }
   };
 
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
-      <div className="flex-grow overflow-y-auto p-4 bg-white mb-4">
+    <div className="flex flex-col h-full">
+      <div className="flex-grow overflow-y-auto">
+        {flashcardContent}
         {messages.map((message, index) => (
           <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
             <div
@@ -63,17 +69,15 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({ messages, onSendM
 
       <div className="p-4 bg-white shadow-sm">
         <form onSubmit={handleSubmit} className="flex items-end">
-          <textarea
-            ref={textareaRef}
+          <TextareaAutosize
+            ref={inputRef}
             value={input}
-            onChange={(e) => {
-              setInput(e.target.value);
-              adjustTextareaHeight();
-            }}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
             placeholder="Type your message..."
-            rows={1}
+            minRows={1}
+            maxRows={5}
           />
           <button
             type="submit"

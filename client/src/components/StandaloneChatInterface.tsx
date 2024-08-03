@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import BaseChatInterface from './BaseChatInterface';
 import { Message } from '../types';
 import { useChat } from '../hooks/mutations/useChat';
@@ -9,6 +9,7 @@ const StandaloneChatInterface: React.FC = () => {
   const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
   const [showModal, setShowModal] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const chatMutation = useChat();
 
@@ -67,11 +68,12 @@ const StandaloneChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
+    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto pt-4">
       <BaseChatInterface
         messages={messages}
         onSendMessage={handleSendMessage}
         onGenerateFlashcards={handleGenerateFlashcards}
+        inputRef={inputRef}
       />
 
       {showModal && (

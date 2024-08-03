@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import BaseChatInterface from './BaseChatInterface';
 import { Card, Message } from '../types';
 import { useChat } from '../hooks/mutations/useChat';
@@ -18,6 +18,7 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
   const [generatedCards, setGeneratedCards] = React.useState<Array<{ front: string; back: string }>>([]);
   const [showModal, setShowModal] = React.useState(false);
   const [currentCardIndex, setCurrentCardIndex] = React.useState(0);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const chatMutation = useChat();
 
@@ -94,50 +95,52 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     }
   };
 
-  return (
-    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
-      <div className="sticky top-0 z-40 bg-white w-full">
-        <div className="flex justify-between items-center p-4 bg-white shadow-sm">
-          <button onClick={onClose} className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
-          <div className="w-6"></div>
-        </div>
+  const flashcardContent = (
+    <>
+      <div className="flex justify-between items-center p-4 bg-white shadow-sm">
+        <button onClick={onClose} className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
+        <div className="w-6"></div>
+      </div>
 
-        <div className="w-full p-6 bg-white mb-4 shadow-sm">
-          <div className="text-2xl mb-4 font-semibold flex justify-center">
-            <div className="markdown-content text-left">
-              <ReactMarkdown>{card.front}</ReactMarkdown>
-            </div>
+      <div className="w-full p-6 bg-white mb-4 shadow-sm">
+        <div className="text-2xl mb-4 font-semibold flex justify-center">
+          <div className="markdown-content text-left">
+            <ReactMarkdown>{card.front}</ReactMarkdown>
           </div>
-          {isRevealed && (
-            <div className="mt-4 pt-2 border-t border-gray-200 w-full">
-              <div className="text-xl flex justify-center">
-                <div className="markdown-content text-left">
-                  <ReactMarkdown>{card.back}</ReactMarkdown>
-                </div>
+        </div>
+        {isRevealed && (
+          <div className="mt-4 pt-2 border-t border-gray-200 w-full">
+            <div className="text-xl flex justify-center">
+              <div className="markdown-content text-left">
+                <ReactMarkdown>{card.back}</ReactMarkdown>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+    </>
+  );
 
-      <div className="flex-grow overflow-y-auto">
-        <BaseChatInterface
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          onGenerateFlashcards={handleGenerateFlashcards}
-        />
-      </div>
+  return (
+    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
+      <BaseChatInterface
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        onGenerateFlashcards={handleGenerateFlashcards}
+        inputRef={inputRef}
+        flashcardContent={flashcardContent}
+      />
 
       {showModal && (
         <FlashcardReviewModal

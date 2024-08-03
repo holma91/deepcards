@@ -29,6 +29,10 @@ const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
+      } else if (event.key === 'ArrowRight') {
+        onNext();
+      } else if (event.key === 'ArrowLeft') {
+        onPrevious();
       }
     };
 
@@ -37,7 +41,7 @@ const FlashcardReviewModal: React.FC<FlashcardReviewModalProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, onNext, onPrevious]);
 
   const renderProgressDots = () => {
     return cards.map((_, index) => (
