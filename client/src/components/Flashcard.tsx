@@ -4,6 +4,7 @@ import { Card, Message } from '../types';
 import '../markdown.css';
 import renderDeckInfo from '../utils/renderDeckInfo';
 import CardChatInterface from './CardChatInterface';
+import Tooltip from './Tooltip';
 
 interface FlashcardProps {
   card: Card;
@@ -118,24 +119,25 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
         )}
         {!isRevealed ? (
           <div className="flex justify-center mt-4 space-x-4">
-            <button
-              onClick={() => setIsRevealed(true)}
-              className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
-            >
-              Show Answer (Space/Enter)
-            </button>
-            <button
-              onClick={() => {
-                setLastFocusedGrade(focusedGrade);
-                setShowChat(true);
-              }}
-              className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 relative group"
-            >
-              Deep Dive (D)
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                Press 'D' (Note: May conflict with Vimium)
-              </span>
-            </button>
+            <Tooltip text="Press Space/Enter">
+              <button
+                onClick={() => setIsRevealed(true)}
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Show Answer
+              </button>
+            </Tooltip>
+            <Tooltip text="Press 'D'">
+              <button
+                onClick={() => {
+                  setLastFocusedGrade(focusedGrade);
+                  setShowChat(true);
+                }}
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Deep Dive
+              </button>
+            </Tooltip>
           </div>
         ) : (
           <>
@@ -163,18 +165,17 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
               Use arrow keys to navigate, Space/Enter to select
             </div>
             <div className="flex justify-center mt-4">
-              <button
-                onClick={() => {
-                  setLastFocusedGrade(focusedGrade);
-                  setShowChat(true);
-                }}
-                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 relative group"
-              >
-                Deep Dive (D)
-                <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  Press 'D' (Note: May conflict with Vimium)
-                </span>
-              </button>
+              <Tooltip text="Press 'D'">
+                <button
+                  onClick={() => {
+                    setLastFocusedGrade(focusedGrade);
+                    setShowChat(true);
+                  }}
+                  className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Deep Dive
+                </button>
+              </Tooltip>
             </div>
           </>
         )}
