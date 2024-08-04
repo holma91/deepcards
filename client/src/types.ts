@@ -24,3 +24,11 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface Chat {
+  id: string;
+  userId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+}

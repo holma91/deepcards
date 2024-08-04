@@ -5,6 +5,7 @@ import { useDecksDueCounts } from '../hooks/useDecksDueCounts';
 import { useDecks } from '../hooks/useDecks';
 import CreateDeckModal from './modals/CreateDeckModal';
 import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
+import { useChats } from '../hooks/useChats';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -18,9 +19,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
   const [isReviewExpanded, setIsReviewExpanded] = useState(true);
   const [isCardsExpanded, setIsCardsExpanded] = useState(true);
+  const [isChatsExpanded, setIsChatsExpanded] = useState(true);
 
   const { data: decksDueCounts, isLoading: isLoadingDueCounts, error: dueCountsError } = useDecksDueCounts();
   const { data: allDecks, isLoading: isLoadingDecks, error: decksError } = useDecks();
+  const { data: allChats, isLoading: isLoadingChats, error: chatsError } = useChats();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -41,6 +44,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       setIsCardsExpanded(!isCardsExpanded);
     } else {
       navigate('/cards');
+    }
+  };
+
+  const handleChatsClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('svg')) {
+      e.preventDefault();
+      setIsChatsExpanded(!isChatsExpanded);
+    } else {
+      navigate('/chat');
     }
   };
 
@@ -81,10 +93,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             <li>
               <Link
                 to="/chat"
-                className={`block py-3 px-6 ${isActive('/chat') ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'}`}
+                onClick={handleChatsClick}
+                className={`py-3 px-6 flex justify-between items-center ${
+                  isActive('/chat') ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'
+                }`}
               >
-                Chat
+                <span>Chat</span>
+                <svg
+                  className={`w-4 h-4 transform transition-transform ${isChatsExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </Link>
+              {isChatsExpanded && (
+                <ul className="ml-6">
+                  {isLoadingChats ? (
+                    <li className="py-2 px-4 text-gray-500">Loading chats...</li>
+                  ) : chatsError ? (
+                    <li className="py-2 px-4 text-red-500">Error loading chats</li>
+                  ) : (
+                    allChats?.map((chat) => (
+                      <li key={chat.id}>
+                        <Link
+                          to={`/chat/${chat.id}`}
+                          className={`py-2 px-4 flex justify-between items-center ${
+                            isActive(`/chat/${chat.id}`) ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>{chat.title}</span>
+                        </Link>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
             </li>
             <li>
               <Link

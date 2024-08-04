@@ -13,6 +13,7 @@ import DeckCards from './pages/DeckCards';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
 import ChatPage from './pages/Chat';
 import { useState } from 'react';
+import ChatInterface from './components/ChatInterface';
 
 function App() {
   return (
@@ -44,7 +45,9 @@ const AppContent: React.FC = () => {
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={session ? <Home /> : <PublicHome />} />
-            <Route path="/chat" element={<ChatPage />} />
+            {/* <Route path="/chat" element={<ChatPage />} /> */}
+            <Route path="/chat" element={<ChatInterface />} />
+            <Route path="/chat/:chatId" element={<ChatInterface />} />
             <Route
               path="/review"
               element={

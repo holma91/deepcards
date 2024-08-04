@@ -1,34 +1,34 @@
-import { useMutation } from '@tanstack/react-query';
+// src/hooks/mutations/useChat.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { Message } from '../../types';
 
 interface ChatParams {
-  cardContent?: string;
+  chatId?: string;
   messages: Message[];
 }
 
 interface ChatResponse {
+  chatId: string;
   response: string;
 }
 
-const chatWithAI = async ({ cardContent, messages }: ChatParams): Promise<ChatResponse> => {
+const chatWithAI = async ({ chatId, messages }: ChatParams): Promise<ChatResponse> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
 
-  const response = await fetch(`${API_BASE_URL}/chat`, {
+  const endpoint = chatId ? `${API_BASE_URL}/chat/${chatId}` : `${API_BASE_URL}/chat`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ cardContent, messages }),
+    body: JSON.stringify({ messages }),
   });
 
   if (!response.ok) {
@@ -39,7 +39,45 @@ const chatWithAI = async ({ cardContent, messages }: ChatParams): Promise<ChatRe
 };
 
 export const useChat = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: chatWithAI,
+    onMutate: async (newChat) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['messages', newChat.chatId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData<Message[]>(['messages', newChat.chatId]);
+
+      // Optimistically update messages
+      queryClient.setQueryData<Message[]>(['messages', newChat.chatId], (old = []) => [
+        ...old,
+        newChat.messages[newChat.messages.length - 1],
+      ]);
+
+      return { previousMessages };
+    },
+    onError: (_, newChat, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      queryClient.setQueryData(['messages', newChat.chatId], context?.previousMessages);
+    },
+    onSettled: (data, _, variables) => {
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ['messages', variables.chatId] });
+
+      // If it's a new chat, invalidate the chats list
+      if (!variables.chatId) {
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+      }
+
+      // Add the AI response to the messages
+      if (data) {
+        queryClient.setQueryData<Message[]>(['messages', data.chatId], (old = []) => [
+          ...old,
+          { role: 'assistant', content: data.response },
+        ]);
+      }
+    },
   });
 };
