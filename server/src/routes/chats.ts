@@ -87,6 +87,36 @@ router.post('', authenticateUser, async (req, res) => {
   }
 });
 
+// Rename a chat
+router.patch('/:chatId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { chatId } = req.params;
+  const { title } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: 'New title is required' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('chats')
+      .update({ title })
+      .eq('id', chatId)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error renaming chat:', error);
+    res.status(500).json({ error: 'Failed to rename chat' });
+  }
+});
+
 // Delete a chat
 router.delete('/:chatId', authenticateUser, async (req, res) => {
   if (!req.user) {

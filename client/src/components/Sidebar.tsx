@@ -1,11 +1,15 @@
 // src/components/Sidebar.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { useDecksDueCounts } from '../hooks/useDecksDueCounts';
 import { useDecks } from '../hooks/useDecks';
 import CreateDeckModal from './modals/CreateDeckModal';
+import DeleteChatModal from './modals/DeleteChatModal';
 import { useKeyboardShortcuts } from '../contexts/KeyboardShortcutContext';
 import { useChats } from '../hooks/useChats';
+import { useRenameChat } from '../hooks/mutations/useRenameChat';
+import { useDeleteChat } from '../hooks/mutations/useDeleteChat';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -20,10 +24,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const [isReviewExpanded, setIsReviewExpanded] = useState(true);
   const [isCardsExpanded, setIsCardsExpanded] = useState(true);
   const [isChatsExpanded, setIsChatsExpanded] = useState(true);
+  const [deletingChat, setDeletingChat] = useState<{ id: string; title: string } | null>(null);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editingChatTitle, setEditingChatTitle] = useState('');
+
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const { data: decksDueCounts, isLoading: isLoadingDueCounts, error: dueCountsError } = useDecksDueCounts();
   const { data: allDecks, isLoading: isLoadingDecks, error: decksError } = useDecks();
   const { data: allChats, isLoading: isLoadingChats, error: chatsError } = useChats();
+  const renameChat = useRenameChat();
+  const deleteChat = useDeleteChat();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -63,6 +74,38 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const handleCloseCreateDeckModal = () => {
     setCreateDeckModalOpen(false);
   };
+
+  const handleRenameChat = async (chatId: string, newTitle: string) => {
+    try {
+      await renameChat.mutateAsync({ chatId, title: newTitle });
+      setEditingChatId(null);
+    } catch (error) {
+      console.error('Failed to rename chat:', error);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (deletingChat) {
+      try {
+        await deleteChat.mutateAsync(deletingChat.id);
+
+        // Check if the deleted chat was the active one
+        if (isActive(`/chat/${deletingChat.id}`)) {
+          navigate('/chat');
+        }
+
+        setDeletingChat(null);
+      } catch (error) {
+        console.error('Failed to delete chat:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (editingChatId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingChatId]);
 
   return (
     <>
@@ -117,15 +160,87 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
                     <li className="py-2 px-4 text-red-500">Error loading chats</li>
                   ) : (
                     allChats?.map((chat) => (
-                      <li key={chat.id}>
-                        <Link
-                          to={`/chat/${chat.id}`}
-                          className={`py-2 px-4 flex justify-between items-center ${
-                            isActive(`/chat/${chat.id}`) ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100'
-                          }`}
-                        >
-                          <span>{chat.title}</span>
-                        </Link>
+                      <li
+                        key={chat.id}
+                        className={`flex items-center justify-between py-2 px-4 group ${
+                          isActive(`/chat/${chat.id}`) ? 'bg-gray-200' : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        {editingChatId === chat.id ? (
+                          <input
+                            ref={editInputRef}
+                            value={editingChatTitle}
+                            onChange={(e) => setEditingChatTitle(e.target.value)}
+                            onBlur={() => handleRenameChat(chat.id, editingChatTitle)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleRenameChat(chat.id, editingChatTitle);
+                              }
+                            }}
+                            className="flex-grow bg-gray-100 px-2 py-1 rounded"
+                          />
+                        ) : (
+                          <Link
+                            to={`/chat/${chat.id}`}
+                            className={`flex-grow ${isActive(`/chat/${chat.id}`) ? 'font-semibold' : ''}`}
+                          >
+                            <span>{chat.title}</span>
+                          </Link>
+                        )}
+                        <Menu as="div" className="relative inline-block text-left">
+                          <div>
+                            <MenuButton className="p-1 rounded-full hover:bg-gray-200 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity">
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                              </svg>
+                            </MenuButton>
+                          </div>
+                          <Transition
+                            enter="transition ease-out duration-100"
+                            enterFrom="transform opacity-0 scale-95"
+                            enterTo="transform opacity-100 scale-100"
+                            leave="transition ease-in duration-75"
+                            leaveFrom="transform opacity-100 scale-100"
+                            leaveTo="transform opacity-0 scale-95"
+                          >
+                            <MenuItems className="absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                              <div className="px-1 py-1">
+                                <MenuItem>
+                                  {({ active }) => (
+                                    <button
+                                      className={`${
+                                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                                      } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      onClick={() => {
+                                        setEditingChatId(chat.id);
+                                        setEditingChatTitle(chat.title);
+                                      }}
+                                    >
+                                      Rename
+                                    </button>
+                                  )}
+                                </MenuItem>
+                                <MenuItem>
+                                  {({ active }) => (
+                                    <button
+                                      className={`${
+                                        active ? 'bg-red-100 text-red-900' : 'text-red-700'
+                                      } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                                      onClick={() => setDeletingChat({ id: chat.id, title: chat.title })}
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
+                                </MenuItem>
+                              </div>
+                            </MenuItems>
+                          </Transition>
+                        </Menu>
                       </li>
                     ))
                   )}
@@ -239,6 +354,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
           </ul>
         )}
       </nav>
+      <DeleteChatModal
+        isOpen={!!deletingChat}
+        onClose={() => setDeletingChat(null)}
+        onConfirm={handleDeleteChat}
+        chatTitle={deletingChat?.title || ''}
+      />
       <CreateDeckModal isOpen={isCreateDeckModalOpen} onClose={handleCloseCreateDeckModal} />
     </>
   );

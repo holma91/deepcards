@@ -23,7 +23,6 @@ const fetchMessages = async (chatId: string): Promise<Message[]> => {
 export const useMessages = (chatId: string | undefined) => {
   return useQuery({
     queryKey: ['messages', chatId],
-    queryFn: () => fetchMessages(chatId!),
-    enabled: !!chatId,
+    queryFn: () => (chatId ? fetchMessages(chatId) : Promise.resolve([])),
   });
 };

@@ -11,9 +11,8 @@ import Header from './components/Header';
 import PublicHome from './pages/PublicHome';
 import DeckCards from './pages/DeckCards';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
-import ChatPage from './pages/Chat';
 import { useState } from 'react';
-import ChatInterface from './components/ChatInterface';
+import ChatInterface from './pages/ChatInterface';
 
 function App() {
   return (

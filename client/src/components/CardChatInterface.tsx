@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import BaseChatInterface from './BaseChatInterface';
 import { Card, Message } from '../types';
-import { useChat } from '../hooks/mutations/useChat';
 import FlashcardReviewModal from './modals/FlashcardReviewModal';
 import ReactMarkdown from 'react-markdown';
 import renderDeckInfo from '../utils/renderDeckInfo';
@@ -10,17 +9,14 @@ interface CardChatInterfaceProps {
   card: Card;
   isRevealed: boolean;
   onClose: () => void;
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose, messages, setMessages }) => {
-  const [generatedCards, setGeneratedCards] = React.useState<Array<{ front: string; back: string }>>([]);
-  const [showModal, setShowModal] = React.useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = React.useState(0);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const chatMutation = useChat();
+const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -30,46 +26,31 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     };
 
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, showModal]);
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = (message: string) => {
+    console.log('Sending message:', message);
+    console.log('Card content:', card);
+    console.log('Is card revealed:', isRevealed);
+
+    // For now, just add the message to the local state
     const userMessage: Message = { role: 'user', content: message };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
 
-    const cardContent = `
-      Front: ${card.front}
-      Back: ${card.back}
-      Note: The back of the card is ${isRevealed ? 'revealed' : 'not revealed'} to the user.
-    `;
-
-    try {
-      const result = await chatMutation.mutateAsync({
-        cardContent: cardContent,
-        messages: newMessages.slice(1),
-      });
-
-      const assistantMessage: Message = { role: 'assistant', content: result.response };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    }
+    // Dummy response
+    setTimeout(() => {
+      const assistantMessage: Message = { role: 'assistant', content: 'This is a dummy response.' };
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+    }, 500);
   };
 
   const handleGenerateFlashcards = () => {
+    console.log('Generate flashcards clicked');
+    // Dummy implementation
     const dummyCards = [
-      { front: 'What is React?', back: 'A JavaScript library for building user interfaces' },
-      { front: 'What is JSX?', back: 'A syntax extension for JavaScript used with React' },
-      { front: 'What is a component in React?', back: 'A reusable piece of UI with its own logic and styling' },
+      { front: 'Dummy front 1', back: 'Dummy back 1' },
+      { front: 'Dummy front 2', back: 'Dummy back 2' },
     ];
     setGeneratedCards(dummyCards);
     setCurrentCardIndex(0);
@@ -138,7 +119,8 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
         messages={messages}
         onSendMessage={handleSendMessage}
         onGenerateFlashcards={handleGenerateFlashcards}
-        inputRef={inputRef}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
         flashcardContent={flashcardContent}
       />
 

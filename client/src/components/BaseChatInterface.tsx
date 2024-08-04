@@ -1,3 +1,4 @@
+// src/components/BaseChatInterface.tsx
 import React, { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -8,7 +9,8 @@ interface BaseChatInterfaceProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   onGenerateFlashcards: () => void;
-  inputRef?: React.RefObject<HTMLTextAreaElement>;
+  inputValue: string;
+  setInputValue: (value: string) => void;
   flashcardContent?: React.ReactNode;
 }
 
@@ -16,11 +18,12 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   messages,
   onSendMessage,
   onGenerateFlashcards,
-  inputRef,
+  inputValue,
+  setInputValue,
   flashcardContent,
 }) => {
-  const [input, setInput] = React.useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -29,16 +32,16 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   useEffect(scrollToBottom, [messages]);
 
   useEffect(() => {
-    if (inputRef?.current) {
+    if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [inputRef]);
+  }, [inputValue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      onSendMessage(input.trim());
-      setInput('');
+    if (inputValue.trim()) {
+      onSendMessage(inputValue.trim());
+      setInputValue('');
     }
   };
 
@@ -71,8 +74,8 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
         <form onSubmit={handleSubmit} className="flex items-end">
           <TextareaAutosize
             ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             className="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 resize-none"
             placeholder="Type your message..."
