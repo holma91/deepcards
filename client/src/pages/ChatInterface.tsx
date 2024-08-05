@@ -5,6 +5,8 @@ import { useMessages } from '../hooks/useMessages';
 import { useChat } from '../hooks/mutations/useChat';
 import { Message } from '../types';
 import BaseChatInterface from '../components/BaseChatInterface';
+import FlashcardReviewModal from '../components/modals/FlashcardReviewModal';
+import { useGenerateFlashcards } from '../hooks/mutations/useGenerateFlashcards';
 
 const topics = [
   'The history and evolution of golf clubs',
@@ -16,14 +18,19 @@ const topics = [
   'The potential for human colonization of Mars',
   'The science behind intermittent fasting',
   'The influence of Shakespeare on modern storytelling',
-  'The future of decentralized finance and cryptocurrency',
+  'The changes in goals per game in the NHL over the years',
 ];
 
 const ChatInterface: React.FC = () => {
   const { chatId } = useParams<{ chatId?: string }>();
   const navigate = useNavigate();
+
+  const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
+  const [showModal, setShowModal] = useState(false);
+
   const { data: messages = [], isLoading, error } = useMessages(chatId);
   const chatMutation = useChat();
+  const generateFlashcardsMutation = useGenerateFlashcards();
   const [inputValue, setInputValue] = useState('');
 
   const handleSendMessage = async (message: string) => {
@@ -45,6 +52,24 @@ const ChatInterface: React.FC = () => {
     }
   };
 
+  const handleGenerateFlashcards = async () => {
+    if (!chatId) {
+      console.error('No chat ID available');
+      return;
+    }
+
+    setShowModal(true);
+    setGeneratedCards([]); // Reset cards to trigger loading state
+
+    try {
+      const result = await generateFlashcardsMutation.mutateAsync({ chatId });
+      setGeneratedCards(result.cards);
+    } catch (error) {
+      console.error('Error generating flashcards:', error);
+      // TODO: Show error message to the user
+      setShowModal(false);
+    }
+  };
   const handleTopicClick = (topic: string) => {
     setInputValue(`Tell me about: ${topic}`);
   };
@@ -70,12 +95,13 @@ const ChatInterface: React.FC = () => {
       <BaseChatInterface
         messages={messages}
         onSendMessage={handleSendMessage}
-        onGenerateFlashcards={() => {
-          console.log('Generate flashcards');
-        }}
+        onGenerateFlashcards={handleGenerateFlashcards}
         inputValue={inputValue}
         setInputValue={setInputValue}
       />
+      {showModal && (
+        <FlashcardReviewModal chatId={chatId!} cards={generatedCards} onClose={() => setShowModal(false)} />
+      )}
     </div>
   );
 };

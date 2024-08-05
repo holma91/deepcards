@@ -238,18 +238,32 @@ router.post('/', authenticateUser, async (req, res) => {
     return res.status(401).json({ error: 'User not authenticated' });
   }
 
-  const { front, back, deckId } = req.body;
+  const { front, back, deckId, chatId } = req.body;
 
   try {
+    // Prepare the card data
+    const cardData: any = {
+      user_id: req.user.id,
+      front,
+      back,
+    };
+
+    // Add chatId to cardData if it exists
+    if (chatId) {
+      cardData.chat_id = chatId;
+    }
+
+    // Insert the card
     const { data: card, error: cardError } = await supabase
       .from('cards')
-      .insert({ user_id: req.user.id, front, back })
+      .insert(cardData)
       .select()
       .single();
 
     if (cardError || !card)
       throw cardError || new Error('Failed to create card');
 
+    // Add the card to the deck
     const { error: deckError } = await supabase
       .from('card_decks')
       .insert({ card_id: card.id, deck_id: deckId });
@@ -258,6 +272,7 @@ router.post('/', authenticateUser, async (req, res) => {
 
     res.status(201).json(keysToCamelCase(card));
   } catch (error) {
+    console.error('Error creating card:', error);
     res.status(500).json({ error: 'Failed to create card' });
   }
 });

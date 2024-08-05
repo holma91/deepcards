@@ -10,9 +10,10 @@ interface CreateCardParams {
   back: string;
   deckId: string;
   deckName: string;
+  chatId?: string;
 }
 
-const createCard = async ({ front, back, deckId }: CreateCardParams): Promise<Card> => {
+const createCard = async ({ front, back, deckId, chatId }: CreateCardParams): Promise<Card> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -24,7 +25,7 @@ const createCard = async ({ front, back, deckId }: CreateCardParams): Promise<Ca
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ front, back, deckId }),
+    body: JSON.stringify({ front, back, deckId, chatId }),
   });
 
   if (!response.ok) throw new Error('Failed to create card');
