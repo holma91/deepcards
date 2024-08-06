@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import BaseChatInterface from './BaseChatInterface';
-import { Card, Message } from '../types';
-import FlashcardReviewModal from './modals/FlashcardReviewModal';
+import { Card } from '../types';
 import ReactMarkdown from 'react-markdown';
 import renderDeckInfo from '../utils/renderDeckInfo';
+import { useMessages } from '../hooks/useMessages';
+import { useExistingChat } from '../hooks/mutations/useExistingChat';
+import { useCreateChat } from '../hooks/mutations/useCreateChat';
 
 interface CardChatInterfaceProps {
   card: Card;
@@ -12,11 +14,13 @@ interface CardChatInterfaceProps {
 }
 
 const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
+  const [chatId, setChatId] = useState<string | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [inputValue, setInputValue] = useState('');
+
+  const { data: messages = [], isLoading, error } = useMessages(chatId);
+  const existingChatMutation = useExistingChat();
+  const createChatMutation = useCreateChat();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -29,50 +33,21 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, showModal]);
 
-  const handleSendMessage = (message: string) => {
-    console.log('Sending message:', message);
-    console.log('Card content:', card);
-    console.log('Is card revealed:', isRevealed);
-
-    // For now, just add the message to the local state
-    const userMessage: Message = { role: 'user', content: message };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
-
-    // Dummy response
-    setTimeout(() => {
-      const assistantMessage: Message = { role: 'assistant', content: 'This is a dummy response.' };
-      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-    }, 500);
-  };
-
-  const handleGenerateFlashcards = () => {
-    console.log('Generate flashcards clicked');
-    // Dummy implementation
-    const dummyCards = [
-      { front: 'Dummy front 1', back: 'Dummy back 1' },
-      { front: 'Dummy front 2', back: 'Dummy back 2' },
-    ];
-    setGeneratedCards(dummyCards);
-    setCurrentCardIndex(0);
-    setShowModal(true);
-  };
-
-  const handleAddToDeck = (card: { front: string; back: string }, deckId: string) => {
-    console.log('Adding card to deck:', card, 'Deck ID:', deckId);
-    handleNextCard();
-  };
-
-  const handleNextCard = () => {
-    if (currentCardIndex < generatedCards.length - 1) {
-      setCurrentCardIndex((prevIndex) => prevIndex + 1);
-    } else {
-      setShowModal(false);
-    }
-  };
-
-  const handlePreviousCard = () => {
-    if (currentCardIndex > 0) {
-      setCurrentCardIndex((prevIndex) => prevIndex - 1);
+  const handleSendMessage = async (message: string) => {
+    try {
+      if (chatId) {
+        // Existing chat
+        await existingChatMutation.mutateAsync({ chatId, message });
+      } else {
+        // New chat
+        const result = await createChatMutation.mutateAsync({
+          message,
+          cardId: card.id, // Always provide cardId for new chats in this context
+        });
+        setChatId(result.chatId);
+      }
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
@@ -113,27 +88,23 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     </>
   );
 
+  if (isLoading) return <div>Loading chat...</div>;
+  if (error) return <div>Error loading chat: {error.message}</div>;
+
   return (
     <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
       <BaseChatInterface
+        chatId={chatId}
         messages={messages}
         onSendMessage={handleSendMessage}
-        onGenerateFlashcards={handleGenerateFlashcards}
         inputValue={inputValue}
         setInputValue={setInputValue}
+        setShowModal={setShowModal}
+        showModal={showModal}
+        disableGenerateFlashcards={messages.length === 0}
+        isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
         flashcardContent={flashcardContent}
       />
-
-      {showModal && (
-        <FlashcardReviewModal
-          cards={generatedCards}
-          currentIndex={currentCardIndex}
-          onClose={() => setShowModal(false)}
-          onAddToDeck={handleAddToDeck}
-          onNext={handleNextCard}
-          onPrevious={handlePreviousCard}
-        />
-      )}
     </div>
   );
 };

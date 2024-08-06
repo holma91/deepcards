@@ -1,12 +1,13 @@
 // src/components/ChatInterface.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { useMessages } from '../hooks/useMessages';
-import { useChat } from '../hooks/mutations/useChat';
-import { Message } from '../types';
+// import { useChat } from '../hooks/mutations/useChat';
 import BaseChatInterface from '../components/BaseChatInterface';
-import FlashcardReviewModal from '../components/modals/FlashcardReviewModal';
-import { useGenerateFlashcards } from '../hooks/mutations/useGenerateFlashcards';
+import { useChatInfo } from '../hooks/useChatInfo';
+import { useExistingChat } from '../hooks/mutations/useExistingChat';
+import { useCreateChat } from '../hooks/mutations/useCreateChat';
 
 const topics = [
   'The history and evolution of golf clubs',
@@ -25,26 +26,27 @@ const ChatInterface: React.FC = () => {
   const { chatId } = useParams<{ chatId?: string }>();
   const navigate = useNavigate();
 
-  const [generatedCards, setGeneratedCards] = useState<Array<{ front: string; back: string }>>([]);
-  const [showModal, setShowModal] = useState(false);
-
   const { data: messages = [], isLoading, error } = useMessages(chatId);
-  const chatMutation = useChat();
-  const generateFlashcardsMutation = useGenerateFlashcards();
+  const { data: chatInfo } = useChatInfo(chatId);
+  const existingChatMutation = useExistingChat();
+  const createChatMutation = useCreateChat();
+
+  console.log('messages:', messages);
+  console.log('chatInfo:', chatInfo);
+
+  const [showModal, setShowModal] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
   const handleSendMessage = async (message: string) => {
-    const userMessage: Message = { role: 'user', content: message };
-    const newMessages = [...messages, userMessage];
-
     try {
-      const result = await chatMutation.mutateAsync({
-        chatId,
-        messages: newMessages,
-      });
-
-      // If it's a new chat, update the URL
-      if (!chatId) {
+      if (chatId) {
+        // Existing chat
+        await existingChatMutation.mutateAsync({ chatId, message });
+      } else {
+        // New chat
+        const result = await createChatMutation.mutateAsync({
+          message,
+        });
         navigate(`/chat/${result.chatId}`, { replace: true });
       }
     } catch (error) {
@@ -52,24 +54,6 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const handleGenerateFlashcards = async () => {
-    if (!chatId) {
-      console.error('No chat ID available');
-      return;
-    }
-
-    setShowModal(true);
-    setGeneratedCards([]); // Reset cards to trigger loading state
-
-    try {
-      const result = await generateFlashcardsMutation.mutateAsync({ chatId });
-      setGeneratedCards(result.cards);
-    } catch (error) {
-      console.error('Error generating flashcards:', error);
-      // TODO: Show error message to the user
-      setShowModal(false);
-    }
-  };
   const handleTopicClick = (topic: string) => {
     setInputValue(`Tell me about: ${topic}`);
   };
@@ -77,9 +61,26 @@ const ChatInterface: React.FC = () => {
   if (isLoading) return <div>Loading chat...</div>;
   if (error) return <div>Error loading chat: {error.message}</div>;
 
+  const flashcardContent = chatInfo?.card ? (
+    <div className="w-full p-6 bg-white mb-4 shadow-sm">
+      <div className="text-2xl mb-4 font-semibold flex justify-center">
+        <div className="markdown-content text-left">
+          <ReactMarkdown>{chatInfo.card.front}</ReactMarkdown>
+        </div>
+      </div>
+      <div className="mt-4 pt-2 border-t border-gray-200 w-full">
+        <div className="text-xl flex justify-center">
+          <div className="markdown-content text-left">
+            <ReactMarkdown>{chatInfo.card.back}</ReactMarkdown>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : undefined;
+
   return (
     <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto pt-4">
-      {messages.length === 0 && (
+      {messages.length === 0 && !createChatMutation.isPending && (
         <div className="grid grid-cols-2 gap-4 mt-4">
           {topics.map((topic, index) => (
             <button
@@ -93,15 +94,17 @@ const ChatInterface: React.FC = () => {
         </div>
       )}
       <BaseChatInterface
+        chatId={chatId}
         messages={messages}
         onSendMessage={handleSendMessage}
-        onGenerateFlashcards={handleGenerateFlashcards}
         inputValue={inputValue}
         setInputValue={setInputValue}
+        setShowModal={setShowModal}
+        showModal={showModal}
+        disableGenerateFlashcards={messages.length === 0}
+        isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
+        flashcardContent={flashcardContent}
       />
-      {showModal && (
-        <FlashcardReviewModal chatId={chatId!} cards={generatedCards} onClose={() => setShowModal(false)} />
-      )}
     </div>
   );
 };
