@@ -36,28 +36,18 @@ export const useCreateDeck = () => {
 
   return useMutation({
     mutationFn: createDeck,
-    onMutate: async (newDeck) => {
-      // Cancel any outgoing refetches
+    onMutate: async (_) => {
       await queryClient.cancelQueries({ queryKey: ['decks'] });
 
-      // Snapshot the previous value
       const previousDecks = queryClient.getQueryData<Deck[]>(['decks']);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData<Deck[]>(['decks'], (old = []) => [...old, { ...newDeck, cardCount: 0 }]);
-
-      // Return a context object with the snapshotted value
+      // Add optimistic update maybe?
       return { previousDecks };
     },
     onError: (err, _, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(['decks'], context?.previousDecks);
-
-      // You might want to add some error reporting here
       console.error('Failed to create deck:', err);
     },
     onSettled: () => {
-      // Always refetch after error or success:
       queryClient.invalidateQueries({ queryKey: ['decks'] });
     },
   });

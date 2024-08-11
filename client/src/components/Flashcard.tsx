@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { Card, Message } from '../types';
-import '../markdown.css';
 import renderDeckInfo from '../utils/renderDeckInfo';
 import CardChatInterface from './CardChatInterface';
 import Tooltip from './Tooltip';
+import { CardWithDecks } from '../types';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface FlashcardProps {
-  card: Card;
+  card: CardWithDecks;
   onReview: (grade: number) => void;
 }
 
@@ -29,9 +28,6 @@ const getNextReviewTime = (grade: number) => {
 const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'How can I help you with this flashcard?' },
-  ]);
   const [focusedGrade, setFocusedGrade] = useState<number | null>(null);
   const [lastFocusedGrade, setLastFocusedGrade] = useState<number | null>(null);
   const gradeButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -104,16 +100,12 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
       <div className="w-full mb-2 text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
       <div className="w-full p-6 bg-white rounded-lg">
         <div className="text-2xl mb-4 font-semibold flex justify-center">
-          <div className="markdown-content text-left">
-            <ReactMarkdown>{card.front}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={card.front} className="text-left w-full" />
         </div>
         {isRevealed && (
           <div className="mt-4 pt-2 border-t border-gray-200 w-full">
             <div className="text-xl flex justify-center">
-              <div className="markdown-content text-left">
-                <ReactMarkdown>{card.back}</ReactMarkdown>
-              </div>
+              <MarkdownRenderer content={card.back} className="text-left w-full" />
             </div>
           </div>
         )}
@@ -186,13 +178,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
       {showChat ? (
-        <CardChatInterface
-          card={card}
-          isRevealed={isRevealed}
-          onClose={handleCloseChat}
-          messages={messages}
-          setMessages={setMessages}
-        />
+        <CardChatInterface card={card} isRevealed={isRevealed} onClose={handleCloseChat} />
       ) : (
         <div className="flex-grow flex items-center justify-center px-6">{renderFlashcard()}</div>
       )}

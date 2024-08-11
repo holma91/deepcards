@@ -1,7 +1,6 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { supabase } from '../supabaseClient';
-import { keysToCamelCase } from '../utils';
 
 const router = express.Router();
 
@@ -19,7 +18,7 @@ router.get('', authenticateUser, async (req, res) => {
       .order('name');
 
     if (error) throw error;
-    res.json(keysToCamelCase(data));
+    res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch decks' });
   }
@@ -48,7 +47,7 @@ router.post('', authenticateUser, async (req, res) => {
       throw error;
     }
 
-    res.status(201).json(keysToCamelCase(newDeck));
+    res.status(201).json(newDeck);
   } catch (error) {
     console.error('Error creating deck:', error);
     res.status(500).json({ error: 'Failed to create deck' });
@@ -75,7 +74,7 @@ router.get('/:deckId', authenticateUser, async (req, res) => {
     if (!data) {
       return res.status(404).json({ error: 'Deck not found' });
     }
-    res.json(keysToCamelCase(data));
+    res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch deck' });
   }

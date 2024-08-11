@@ -1,9 +1,4 @@
-interface Deck {
-  id: string;
-  name: string;
-}
-
-const renderDeckInfo = (decks: Deck[]) => {
+const renderDeckInfo = (decks: { id: string; name: string }[]) => {
   if (!decks || decks.length <= 0) {
     return null;
   }

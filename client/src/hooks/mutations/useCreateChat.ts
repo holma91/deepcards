@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { Message } from '../../types';
+import { Message, Chat, ChatResponse } from '../../types';
 
 interface CreateChatParams {
   message: string;
@@ -42,56 +42,71 @@ export const useCreateChat = () => {
   return useMutation({
     mutationFn: createNewChat,
     onMutate: async (newChat) => {
-      // Generate a temporary chat ID
       const tempChatId = 'temp-' + Date.now();
+      await queryClient.cancelQueries({ queryKey: ['chatInfo', tempChatId] });
 
-      // Cancel any outgoing refetches for the new chat
-      await queryClient.cancelQueries({ queryKey: ['messages', tempChatId] });
+      const tempChatInfo: ChatResponse = {
+        id: tempChatId,
+        title: newChat.message.substring(0, 50) + '...',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: '', // This will be filled in by the server
+        card_id: newChat.cardId || null,
+        card: null,
+        messages: [{ role: 'user', content: newChat.message, created_at: new Date().toISOString() } as Message],
+        suggestions: [],
+      };
 
-      // Optimistically update the messages for the new chat
-      queryClient.setQueryData<Message[]>(['messages', tempChatId], [{ role: 'user', content: newChat.message }]);
+      queryClient.setQueryData<ChatResponse>(['chatInfo', tempChatId], tempChatInfo);
 
-      // Optimistically update the chats list
-      queryClient.setQueryData<any[]>(['chats'], (old = []) => [
-        { id: tempChatId, title: newChat.message.substring(0, 50) + '...', createdAt: new Date().toISOString() },
-        ...old,
-      ]);
+      queryClient.setQueryData<Chat[]>(['chats'], (old = []) => [tempChatInfo, ...old]);
 
       return { tempChatId };
     },
     onError: (_, __, context) => {
-      // If the mutation fails, remove the optimistic updates
       if (context?.tempChatId) {
-        queryClient.removeQueries({ queryKey: ['messages', context.tempChatId] });
-        queryClient.setQueryData<any[]>(['chats'], (old = []) => old.filter((chat) => chat.id !== context.tempChatId));
+        queryClient.removeQueries({ queryKey: ['chatInfo', context.tempChatId] });
+        queryClient.setQueryData<Chat[]>(['chats'], (old = []) => old.filter((chat) => chat.id !== context.tempChatId));
       }
     },
     onSuccess: (data, variables, context) => {
-      // Update the messages with the real chat ID and add the AI response
       if (context?.tempChatId) {
-        const messages = queryClient.getQueryData<Message[]>(['messages', context.tempChatId]);
-        queryClient.setQueryData<Message[]>(
-          ['messages', data.chatId],
-          [...(messages || []), { role: 'assistant', content: data.response }]
-        );
-        queryClient.removeQueries({ queryKey: ['messages', context.tempChatId] });
+        const tempChatInfo = queryClient.getQueryData<ChatResponse>(['chatInfo', context.tempChatId]);
+        if (tempChatInfo) {
+          const updatedChatInfo: ChatResponse = {
+            ...tempChatInfo,
+            id: data.chatId,
+            messages: [
+              ...tempChatInfo.messages,
+              { role: 'assistant', content: data.response, created_at: new Date().toISOString() } as Message,
+            ],
+          };
+          queryClient.setQueryData<ChatResponse>(['chatInfo', data.chatId], updatedChatInfo);
+          queryClient.removeQueries({ queryKey: ['chatInfo', context.tempChatId] });
+        }
       } else {
-        queryClient.setQueryData<Message[]>(
-          ['messages', data.chatId],
-          [
-            { role: 'user', content: variables.message },
-            { role: 'assistant', content: data.response },
-          ]
-        );
+        const newChatInfo: ChatResponse = {
+          id: data.chatId,
+          title: variables.message.substring(0, 50) + '...',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          user_id: '', // This will be filled in by the server
+          card_id: variables.cardId || null,
+          card: null,
+          messages: [
+            { role: 'user', content: variables.message, created_at: new Date().toISOString() } as Message,
+            { role: 'assistant', content: data.response, created_at: new Date().toISOString() } as Message,
+          ],
+          suggestions: [],
+        };
+        queryClient.setQueryData<ChatResponse>(['chatInfo', data.chatId], newChatInfo);
       }
 
-      // Update the chats list with the real chat ID
-      queryClient.setQueryData<any[]>(['chats'], (old = []) => {
+      queryClient.setQueryData<Chat[]>(['chats'], (old = []) => {
         const updatedChats = old.map((chat) => (chat.id === context?.tempChatId ? { ...chat, id: data.chatId } : chat));
         return updatedChats;
       });
 
-      // Invalidate and refetch the chats query to ensure it's up to date
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     },
   });

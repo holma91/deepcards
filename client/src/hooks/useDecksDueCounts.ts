@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../config';
 export interface DeckDueCount {
   id: string;
   name: string;
-  dueCount: number;
+  due_count: number;
 }
 
 const fetchDecksDueCounts = async (): Promise<DeckDueCount[]> => {

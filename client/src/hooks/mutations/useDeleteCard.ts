@@ -44,9 +44,9 @@ export const useDeleteCard = () => {
       queryClient.setQueryData<Card[]>(['cards', deckId], (old = []) => old.filter((card) => card.id !== cardId));
 
       const cardToDelete = previousCards?.find((card) => card.id === cardId);
-      if (cardToDelete && new Date(cardToDelete.nextReview) <= new Date()) {
+      if (cardToDelete && new Date(cardToDelete.next_review) <= new Date()) {
         queryClient.setQueryData<DeckDueCount[]>(['decks', 'dueCounts'], (old = []) =>
-          old.map((deck) => (deck.id === deckId ? { ...deck, dueCount: Math.max(0, deck.dueCount - 1) } : deck))
+          old.map((deck) => (deck.id === deckId ? { ...deck, due_count: Math.max(0, deck.due_count - 1) } : deck))
         );
       }
 

@@ -1,15 +1,15 @@
-// src/hooks/useChatInfo.ts
-
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config';
-import { Chat, Card } from '../types';
 import { supabase } from '../utils/supabaseClient';
+import { Card, Chat, Message, Suggestion } from '../types';
 
-interface ChatWithCard extends Chat {
-  card?: Card;
+interface ChatResponse extends Omit<Chat, 'card_id'> {
+  card: Card | null;
+  messages: Message[];
+  suggestions: Suggestion[];
 }
 
-const fetchChatInfo = async (chatId: string): Promise<ChatWithCard> => {
+const fetchChatInfo = async (chatId: string): Promise<ChatResponse> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();

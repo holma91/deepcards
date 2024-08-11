@@ -2,11 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../utils/supabaseClient';
 import { API_BASE_URL } from '../config';
-
-interface Deck {
-  id: string;
-  name: string;
-}
+import { Deck } from '../types';
 
 const fetchDeck = async (deckId: string): Promise<Deck> => {
   const {

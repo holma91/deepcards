@@ -1,6 +1,6 @@
 // src/components/Header.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import { Menu, MenuItem, MenuItems, Transition, MenuButton } from '@headlessui/react';
@@ -34,21 +34,39 @@ const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar }) =
     <div className="flex items-center justify-between h-16 px-6 w-full">
       <div className="flex items-center">
         {showSidebarToggle && (
-          <button
-            onClick={onToggleSidebar}
-            className="p-2 rounded-full hover:bg-gray-100 mr-4"
-            aria-label="Show Sidebar"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="flex items-center">
+            <button
+              onClick={onToggleSidebar}
+              className="p-2 rounded-full hover:bg-gray-100 mr-4"
+              aria-label="Show Sidebar"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <Link to="/chat" className="p-1 rounded-full hover:bg-gray-200 focus:outline-none" aria-label="Go to Chat">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            </Link>
+          </div>
         )}
       </div>
       <div className="flex items-center">

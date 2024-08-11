@@ -2,18 +2,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { Message } from '../../types';
+import { Message, ChatResponse } from '../../types';
 
 interface ExistingChatParams {
   chatId: string;
   message: string;
 }
 
-interface ChatResponse {
+interface AIResponse {
   response: string;
 }
 
-const sendMessageToExistingChat = async ({ chatId, message }: ExistingChatParams): Promise<ChatResponse> => {
+const sendMessageToExistingChat = async ({ chatId, message }: ExistingChatParams): Promise<AIResponse> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -41,27 +41,39 @@ export const useExistingChat = () => {
   return useMutation({
     mutationFn: sendMessageToExistingChat,
     onMutate: async (newChat) => {
-      await queryClient.cancelQueries({ queryKey: ['messages', newChat.chatId] });
-      const previousMessages = queryClient.getQueryData<Message[]>(['messages', newChat.chatId]);
+      await queryClient.cancelQueries({ queryKey: ['chatInfo', newChat.chatId] });
+      const previousChatInfo = queryClient.getQueryData<ChatResponse>(['chatInfo', newChat.chatId]);
 
-      queryClient.setQueryData<Message[]>(['messages', newChat.chatId], (old = []) => [
-        ...old,
-        { role: 'user', content: newChat.message },
-      ]);
+      queryClient.setQueryData<ChatResponse>(['chatInfo', newChat.chatId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: [
+            ...old.messages,
+            { role: 'user', content: newChat.message, created_at: new Date().toISOString() } as Message,
+          ],
+        };
+      });
 
-      return { previousMessages };
+      return { previousChatInfo };
     },
     onError: (_, newChat, context) => {
-      queryClient.setQueryData(['messages', newChat.chatId], context?.previousMessages);
+      queryClient.setQueryData(['chatInfo', newChat.chatId], context?.previousChatInfo);
     },
     onSuccess: (data, variables) => {
-      queryClient.setQueryData<Message[]>(['messages', variables.chatId], (old = []) => [
-        ...old,
-        { role: 'assistant', content: data.response },
-      ]);
+      queryClient.setQueryData<ChatResponse>(['chatInfo', variables.chatId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: [
+            ...old.messages,
+            { role: 'assistant', content: data.response, created_at: new Date().toISOString() } as Message,
+          ],
+        };
+      });
     },
     onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.chatId] });
+      queryClient.invalidateQueries({ queryKey: ['chatInfo', variables.chatId] });
     },
   });
 };

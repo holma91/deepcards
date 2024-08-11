@@ -66,7 +66,7 @@ export const useReviewCard = () => {
         queryClient.setQueryData<DeckDueCount[]>(['decks', 'dueCounts'], (old) =>
           old
             ? old.map((deck) =>
-                deckIds.includes(deck.id) ? { ...deck, dueCount: Math.max(0, deck.dueCount - 1) } : deck
+                deckIds.includes(deck.id) ? { ...deck, due_count: Math.max(0, deck.due_count - 1) } : deck
               )
             : []
         );

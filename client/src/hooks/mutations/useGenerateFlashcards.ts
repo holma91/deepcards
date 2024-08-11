@@ -1,13 +1,14 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
+import { Suggestion } from '../../types'; // Adjust the import path as needed
 
 interface GenerateFlashcardsParams {
   chatId: string;
 }
 
 interface GenerateFlashcardsResponse {
-  cards: Array<{ front: string; back: string }>;
+  suggestions: Suggestion[];
 }
 
 const generateFlashcards = async ({ chatId }: GenerateFlashcardsParams): Promise<GenerateFlashcardsResponse> => {
@@ -32,7 +33,13 @@ const generateFlashcards = async ({ chatId }: GenerateFlashcardsParams): Promise
 };
 
 export const useGenerateFlashcards = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: generateFlashcards,
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch chatInfo query
+      queryClient.invalidateQueries({ queryKey: ['chatInfo', variables.chatId] });
+    },
   });
 };

@@ -1,25 +1,17 @@
 // src/components/Cards.tsx
 import React from 'react';
 import CardTable from '../components/CardTable';
-import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
 import { useAllCards } from '../hooks/useAllCards';
 
 const Cards: React.FC = () => {
   const { data: cards, isLoading: isLoadingCards, error: cardsError } = useAllCards();
-  const deleteCardMutation = useDeleteCard();
 
-  const handleDeleteCard = (cardId: string) => {
-    deleteCardMutation.mutate(
-      { cardId, deckId: '' },
-      {
-        onSuccess: () => {
-          console.log('Card deleted successfully');
-        },
-        onError: (error) => {
-          console.error('Failed to delete card:', error);
-        },
-      }
-    );
+  const handleDeleteCard = () => {
+    console.log('delete card');
+  };
+
+  const handleSelectCard = () => {
+    console.log('select card');
   };
 
   return (
@@ -32,7 +24,7 @@ const Cards: React.FC = () => {
         ) : cardsError ? (
           <div className="px-4 py-5 sm:p-6">Error loading cards: {(cardsError as Error).message}</div>
         ) : cards && cards.length > 0 ? (
-          <CardTable cards={cards} onDeleteCard={handleDeleteCard} />
+          <CardTable cards={cards} onDeleteCard={handleDeleteCard} onSelectCard={handleSelectCard} />
         ) : (
           <div className="px-4 py-5 sm:p-6">No cards found.</div>
         )}

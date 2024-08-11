@@ -1,18 +1,21 @@
-// src/App.tsx
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import ReviewSession from './pages/ReviewSession';
-import Sidebar from './components/Sidebar';
-import Home from './pages/Home';
-import Cards from './pages/Cards';
-import { useAuth } from './contexts/AuthContext';
-import Header from './components/Header';
-import PublicHome from './pages/PublicHome';
-import DeckCards from './pages/DeckCards';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
-import { useState } from 'react';
-import ChatInterface from './pages/ChatInterface';
+import { useAuth } from './contexts/AuthContext';
+
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+
+// Pages
+import Home from './pages/Home';
+import PublicHome from './pages/PublicHome';
+import ReviewSession from './pages/ReviewSession';
+import Cards from './pages/Cards';
+import Chat from './pages/Chat';
+import CardsByDeck from './pages/CardsByDeck';
 
 function App() {
   return (
@@ -44,9 +47,22 @@ const AppContent: React.FC = () => {
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={session ? <Home /> : <PublicHome />} />
-            {/* <Route path="/chat" element={<ChatPage />} /> */}
-            <Route path="/chat" element={<ChatInterface />} />
-            <Route path="/chat/:chatId" element={<ChatInterface />} />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat/:chatId"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/review"
               element={
@@ -75,7 +91,7 @@ const AppContent: React.FC = () => {
               path="/cards/:deckId"
               element={
                 <ProtectedRoute>
-                  <DeckCards />
+                  <CardsByDeck />
                 </ProtectedRoute>
               }
             />

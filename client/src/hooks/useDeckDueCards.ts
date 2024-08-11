@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../utils/supabaseClient';
-import { Card } from '../types';
 import { API_BASE_URL } from '../config';
+import { CardWithDecks } from '../types';
 
-const fetchDeckDueCards = async (deckId: string): Promise<Card[]> => {
+const fetchDeckDueCards = async (deckId: string): Promise<CardWithDecks[]> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();

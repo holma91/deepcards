@@ -1,50 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import BaseChatInterface from './BaseChatInterface';
-import { Card } from '../types';
-import ReactMarkdown from 'react-markdown';
 import renderDeckInfo from '../utils/renderDeckInfo';
-import { useMessages } from '../hooks/useMessages';
+import { useChatInfo } from '../hooks/useChatInfo';
 import { useExistingChat } from '../hooks/mutations/useExistingChat';
 import { useCreateChat } from '../hooks/mutations/useCreateChat';
+import { CardWithDecks } from '../types';
+import { useQueryClient } from '@tanstack/react-query';
+import { createTimeline } from '../utils/utils';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface CardChatInterfaceProps {
-  card: Card;
+  card: CardWithDecks;
   isRevealed: boolean;
   onClose: () => void;
 }
 
 const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
-  const [chatId, setChatId] = useState<string | undefined>(undefined);
-  const [showModal, setShowModal] = useState(false);
+  const [chatId, setChatId] = useState<string | undefined>(card.chat_id || undefined);
   const [inputValue, setInputValue] = useState('');
 
-  const { data: messages = [], isLoading, error } = useMessages(chatId);
+  const chatInfo = useChatInfo(chatId);
   const existingChatMutation = useExistingChat();
   const createChatMutation = useCreateChat();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setChatId(card.chat_id || undefined);
+  }, [card.chat_id]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !showModal) {
+      if (event.key === 'Escape') {
         onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, showModal]);
+  }, [onClose]);
 
   const handleSendMessage = async (message: string) => {
     try {
-      if (chatId) {
-        // Existing chat
-        await existingChatMutation.mutateAsync({ chatId, message });
+      if (card.chat_id) {
+        await existingChatMutation.mutateAsync({ chatId: card.chat_id, message });
       } else {
-        // New chat
-        const result = await createChatMutation.mutateAsync({
+        const { chatId: newChatId } = await createChatMutation.mutateAsync({
           message,
-          cardId: card.id, // Always provide cardId for new chats in this context
+          cardId: card.id,
         });
-        setChatId(result.chatId);
+        setChatId(newChatId);
+
+        queryClient.setQueryData(['cards', 'due'], (oldCards: CardWithDecks[] | undefined) => {
+          if (!oldCards) return oldCards;
+
+          return oldCards.map((oldCard) => {
+            if (oldCard.id === card.id) {
+              return { ...oldCard, chat_id: newChatId };
+            }
+            return oldCard;
+          });
+        });
+        queryClient.setQueryData(['cards', 'due', card.decks[0].id], (oldCards: CardWithDecks[] | undefined) => {
+          if (!oldCards) return oldCards;
+
+          return oldCards.map((oldCard) => {
+            if (oldCard.id === card.id) {
+              return { ...oldCard, chat_id: newChatId };
+            }
+            return oldCard;
+          });
+        });
       }
     } catch (error) {
       console.error('Error:', error);
@@ -71,16 +96,12 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
 
       <div className="w-full p-6 bg-white mb-4 shadow-sm">
         <div className="text-2xl mb-4 font-semibold flex justify-center">
-          <div className="markdown-content text-left">
-            <ReactMarkdown>{card.front}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={card.front} className="text-left" />
         </div>
         {isRevealed && (
           <div className="mt-4 pt-2 border-t border-gray-200 w-full">
             <div className="text-xl flex justify-center">
-              <div className="markdown-content text-left">
-                <ReactMarkdown>{card.back}</ReactMarkdown>
-              </div>
+              <MarkdownRenderer content={card.back} className="text-left" />
             </div>
           </div>
         )}
@@ -88,20 +109,23 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     </>
   );
 
-  if (isLoading) return <div>Loading chat...</div>;
-  if (error) return <div>Error loading chat: {error.message}</div>;
+  const timeline = chatInfo.data ? createTimeline(chatInfo.data.messages, chatInfo.data.suggestions) : [];
+
+  const sendError = existingChatMutation.error || createChatMutation.error;
 
   return (
     <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
+      {sendError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{'Failed to send message. Please try again.'}</span>
+        </div>
+      )}
       <BaseChatInterface
-        chatId={chatId}
-        messages={messages}
+        chatId={card.chat_id || undefined}
+        timeline={timeline}
         onSendMessage={handleSendMessage}
         inputValue={inputValue}
         setInputValue={setInputValue}
-        setShowModal={setShowModal}
-        showModal={showModal}
-        disableGenerateFlashcards={messages.length === 0}
         isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
         flashcardContent={flashcardContent}
       />

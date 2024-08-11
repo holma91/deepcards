@@ -11,9 +11,10 @@ interface CreateCardParams {
   deckId: string;
   deckName: string;
   chatId?: string;
+  suggestionId?: string;
 }
 
-const createCard = async ({ front, back, deckId, chatId }: CreateCardParams): Promise<Card> => {
+const createCard = async ({ front, back, deckId, chatId, suggestionId }: CreateCardParams): Promise<Card> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -25,7 +26,7 @@ const createCard = async ({ front, back, deckId, chatId }: CreateCardParams): Pr
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ front, back, deckId, chatId }),
+    body: JSON.stringify({ front, back, deckId, chatId, suggestionId }),
   });
 
   if (!response.ok) throw new Error('Failed to create card');
@@ -46,26 +47,11 @@ export const useCreateCard = () => {
       const previousCards = queryClient.getQueryData<Card[]>(['cards', newCard.deckId]);
       const previousDueCounts = queryClient.getQueryData<DeckDueCount[]>(['decks', 'dueCounts']);
 
-      // Optimistically update cards
-      queryClient.setQueryData<Card[]>(['cards', newCard.deckId], (old = []) => [
-        ...old,
-        {
-          id: 'temp-id-' + Date.now(),
-          decks: [{ id: newCard.deckId, name: newCard.deckName }],
-          userId: 'temp-user-id',
-          front: newCard.front,
-          back: newCard.back,
-          stage: 0,
-          easeFactor: 2.5,
-          interval: 0,
-          nextReview: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      // Should we ptimistically update cards?
 
       // Optimistically update due counts
       queryClient.setQueryData<DeckDueCount[]>(['decks', 'dueCounts'], (old = []) =>
-        old.map((deck) => (deck.id === newCard.deckId ? { ...deck, dueCount: deck.dueCount + 1 } : deck))
+        old.map((deck) => (deck.id === newCard.deckId ? { ...deck, due_count: deck.due_count + 1 } : deck))
       );
 
       return { previousCards, previousDueCounts };
@@ -81,6 +67,7 @@ export const useCreateCard = () => {
       queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
       queryClient.invalidateQueries({ queryKey: ['cards', 'due'] });
       queryClient.invalidateQueries({ queryKey: ['cards', 'due', newCard.deckId] });
+      queryClient.invalidateQueries({ queryKey: ['chatInfo', newCard.chatId] });
     },
   });
 };

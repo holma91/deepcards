@@ -8,6 +8,8 @@ import {
   SortingState,
   getFilteredRowModel,
 } from '@tanstack/react-table';
+import { Menu, Transition, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../types';
 
 interface CardTableProps {
@@ -18,16 +20,27 @@ interface CardTableProps {
 
 const columnHelper = createColumnHelper<Card>();
 
+const MAX_CELL_LENGTH = 40;
+const CARDS_TO_SHOW_ABOVE = 3;
+
 const truncateText = (text: string, maxLength: number) => {
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + '...';
 };
 
 const CardTable: React.FC<CardTableProps> = ({ cards, onDeleteCard, onSelectCard }) => {
+  const navigate = useNavigate();
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const MAX_CELL_LENGTH = 40;
+  const handleChat = (card: Card, chatId?: string) => {
+    if (chatId) {
+      navigate(`/chat/${chatId}`);
+    } else {
+      navigate(`/chat?card_id=${card.id}`);
+    }
+  };
 
   const columns = [
     columnHelper.accessor('front', {
@@ -38,40 +51,20 @@ const CardTable: React.FC<CardTableProps> = ({ cards, onDeleteCard, onSelectCard
       cell: (info) => truncateText(info.getValue(), MAX_CELL_LENGTH),
       header: () => <span>Back</span>,
     }),
-    columnHelper.accessor('nextReview', {
+    columnHelper.accessor('next_review', {
       cell: (info) => new Date(info.getValue()).toLocaleString(),
       header: () => <span>Next Review</span>,
     }),
     columnHelper.display({
       id: 'actions',
-      cell: (props) => (
-        <button
-          onClick={() => onDeleteCard(props.row.original.id)}
-          className="text-black hover:text-red-600"
-          aria-label="Delete card"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-      ),
-    }),
-    columnHelper.display({
-      id: 'select',
-      cell: (props) => (
-        <button
-          onClick={() => onSelectCard(props.row.original)}
-          className="text-black hover:text-blue-600 mr-2"
-          aria-label="Edit card"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-          </svg>
-        </button>
+      cell: (info) => (
+        <ActionMenu
+          card={info.row.original}
+          onDelete={() => onDeleteCard(info.row.original.id)}
+          onEdit={() => onSelectCard(info.row.original)}
+          onChat={(chatId) => handleChat(info.row.original, chatId)}
+          showAbove={info.row.index >= cards.length - CARDS_TO_SHOW_ABOVE}
+        />
       ),
     }),
   ];
@@ -135,6 +128,81 @@ const CardTable: React.FC<CardTableProps> = ({ cards, onDeleteCard, onSelectCard
         </table>
       </div>
     </div>
+  );
+};
+
+interface ActionMenuProps {
+  card: Card;
+  onDelete: () => void;
+  onEdit: () => void;
+  onChat: (chatId?: string) => void;
+  showAbove: boolean;
+}
+
+const ActionMenu: React.FC<ActionMenuProps> = ({ card, onDelete, onEdit, onChat, showAbove }) => {
+  return (
+    <Menu as="div" className="relative inline-block text-left">
+      <div>
+        <MenuButton className="p-1 rounded-full hover:bg-gray-200 focus:outline-none">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+          </svg>
+        </MenuButton>
+      </div>
+      <Transition
+        enter="transition ease-out duration-100"
+        enterFrom="transform opacity-0 scale-95"
+        enterTo="transform opacity-100 scale-100"
+        leave="transition ease-in duration-75"
+        leaveFrom="transform opacity-100 scale-100"
+        leaveTo="transform opacity-0 scale-95"
+      >
+        <MenuItems
+          className={`absolute ${
+            showAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+          } right-0 w-56 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50`}
+        >
+          <div className="px-1 py-1">
+            <MenuItem>
+              {({ active }) => (
+                <button
+                  className={`${
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                  onClick={onEdit}
+                >
+                  Edit
+                </button>
+              )}
+            </MenuItem>
+            <MenuItem>
+              {({ active }) => (
+                <button
+                  className={`${
+                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                  onClick={() => onChat(card.chat_id || undefined)}
+                >
+                  {card.chat_id ? 'Go to Chat' : 'Start Chat'}
+                </button>
+              )}
+            </MenuItem>
+            <MenuItem>
+              {({ active }) => (
+                <button
+                  className={`${
+                    active ? 'bg-red-100 text-red-900' : 'text-red-700'
+                  } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                  onClick={onDelete}
+                >
+                  Delete
+                </button>
+              )}
+            </MenuItem>
+          </div>
+        </MenuItems>
+      </Transition>
+    </Menu>
   );
 };
 

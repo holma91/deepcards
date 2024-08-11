@@ -4,18 +4,36 @@ import openai from '../openaiClient';
 import { supabase } from '../supabaseClient';
 import { z } from 'zod';
 import instructor from '../instructorClient';
+import { Database } from '../types/supabase/database.types';
 
-type Message = {
-  role: 'user' | 'assistant' | 'system';
+type Chat = Database['public']['Tables']['chats']['Row'];
+type Card = Database['public']['Tables']['cards']['Row'];
+type Message = Database['public']['Tables']['messages']['Row'];
+type Suggestion = Database['public']['Tables']['suggestions']['Row'];
+type SuggestionInsert = Database['public']['Tables']['suggestions']['Insert'];
+
+type OpenAIMessage = {
+  role: 'system' | 'user' | 'assistant';
   content: string;
 };
 
-type ExistingCard = {
-  front: string;
-  back: string;
-};
+type TimelineItem =
+  | (Message & { type: 'message' })
+  | (Suggestion & { type: 'suggestion' });
 
 const router = express.Router();
+
+const ChatResponseSchema = z.object({
+  title: z
+    .string()
+    .max(50)
+    .describe(
+      'A concise, relevant title for the chat based on the initial message'
+    ),
+  response: z
+    .string()
+    .describe("The AI assistant's response to the user's message"),
+});
 
 const FlashcardSchema = z.object({
   front: z
@@ -32,37 +50,16 @@ const FlashcardsSchema = z.object({
     .describe('An array of flashcards generated from the conversation'),
 });
 
-function prepareMessagesForFlashcardGeneration(
-  conversationHistory: Message[],
-  existingCard?: ExistingCard,
-  count: number = 3
-): Message[] {
-  let systemMessage = `You are an AI assistant that generates flashcards based on conversations. 
-    Create concise, relevant flashcards that capture key information from the given conversation.`;
+const MATH_RENDERING_INSTRUCTIONS = `
+Writing math formulas:
+You have a MathJax render environment.
+- Any LaTeX text between single dollar sign ($) will be rendered as a TeX formula;
+- Use $(tex_formula)$ in-line delimiters to display equations instead of backslash;
+- The render environment only uses $ (single dollarsign) as a container delimiter, never output $$.
+Example: $x^2 + 3x$ is output for "x² + 3x" to appear as TeX.
+`;
 
-  if (existingCard) {
-    systemMessage += `\n\nThis conversation is based on an existing flashcard:
-    Front: ${existingCard.front}
-    Back: ${existingCard.back}
-    
-    When generating new flashcards, focus on complementary information or different aspects of the topic that aren't directly covered by the existing flashcard.`;
-  }
-
-  return [
-    { role: 'system', content: systemMessage },
-    {
-      role: 'user',
-      content: `Generate ${count} flashcards based on the following conversation. ${
-        existingCard
-          ? 'Ensure they complement the existing flashcard without duplicating its content.'
-          : ''
-      }`,
-    },
-    ...conversationHistory,
-  ];
-}
-
-async function generateFlashcards(messages: Message[]) {
+async function generateFlashcards(messages: OpenAIMessage[]) {
   const result = await instructor.chat.completions.create({
     messages,
     model: 'gpt-4o',
@@ -75,22 +72,44 @@ async function generateFlashcards(messages: Message[]) {
   return result.flashcards;
 }
 
+async function generateChatTitleAndResponse(
+  messages: OpenAIMessage[]
+): Promise<{ title: string; response: string }> {
+  const result = await instructor.chat.completions.create({
+    messages: [
+      {
+        role: 'system',
+        content:
+          "You are an AI assistant that generates both a concise chat title and a response to the user's message. The title should be relevant and based on the initial message. The response should be helpful and engaging.",
+      },
+      ...messages,
+    ],
+    model: 'gpt-4o',
+    response_model: {
+      schema: ChatResponseSchema,
+      name: 'ChatResponse',
+    },
+  });
+
+  return result;
+}
+
 router.post('/:chatId/cards', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
 
   const { chatId } = req.params;
-  const { count = 3 } = req.query;
 
   try {
-    const { data: chat, error: chatError } = await supabase
+    const { data, error: chatError } = await supabase
       .from('chats')
       .select(
         `
         *,
         cards!chats_card_id_fkey(*),
-        messages(*)
+        messages(*),
+        suggestions(*)
       `
       )
       .eq('id', chatId)
@@ -98,33 +117,33 @@ router.post('/:chatId/cards', authenticateUser, async (req, res) => {
       .single();
 
     if (chatError) throw chatError;
-    if (!chat) {
+    if (!data) {
       return res.status(404).json({ error: 'Chat not found' });
     }
 
-    const conversationHistory: Message[] = chat.messages
-      .sort(
-        (a: any, b: any) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      )
-      .map(
-        ({
-          role,
-          content,
-        }: {
-          role: 'user' | 'assistant';
-          content: string;
-        }) => ({ role, content })
-      );
+    const chat = data as Chat & {
+      cards: Card | null;
+      messages: Message[];
+      suggestions: Suggestion[];
+    };
+    console.log('Chat:', chat);
 
-    const existingCard: ExistingCard | undefined = chat.cards
-      ? { front: chat.cards.front, back: chat.cards.back }
-      : undefined;
+    const timeline: TimelineItem[] = [
+      ...chat.messages.map((msg) => ({ ...msg, type: 'message' as const })),
+      ...chat.suggestions.map((sugg) => ({
+        ...sugg,
+        type: 'suggestion' as const,
+      })),
+    ].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    const originatingCard = chat.cards ? chat.cards : undefined;
 
     const messages = prepareMessagesForFlashcardGeneration(
-      conversationHistory,
-      existingCard,
-      Number(count)
+      timeline,
+      originatingCard
     );
 
     console.log(
@@ -135,8 +154,26 @@ router.post('/:chatId/cards', authenticateUser, async (req, res) => {
     const generatedCards = await generateFlashcards(messages);
 
     // insert suggestions here
+    const suggestionsToInsert: SuggestionInsert[] = generatedCards.map(
+      (card) => ({
+        user_id: req.user!.id,
+        chat_id: chatId,
+        front: card.front,
+        back: card.back,
+      })
+    );
 
-    res.json({ cards: generatedCards });
+    const { data: insertedSuggestions, error: insertError } = await supabase
+      .from('suggestions')
+      .insert(suggestionsToInsert)
+      .select();
+
+    if (insertError) {
+      console.error('Error inserting suggestions:', insertError);
+      throw insertError;
+    }
+
+    res.json({ suggestions: insertedSuggestions });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to generate flashcards' });
@@ -157,7 +194,8 @@ router.get('/:chatId', authenticateUser, async (req, res) => {
         `
         *,
         cards!chats_card_id_fkey(*),
-        messages(*, order:created_at)
+        messages(*, order:created_at),
+        suggestions(*, order:created_at)
       `
       )
       .eq('id', chatId)
@@ -169,12 +207,13 @@ router.get('/:chatId', authenticateUser, async (req, res) => {
       return res.status(404).json({ error: 'Chat not found' });
     }
 
-    // Rename 'cards' to 'card' and ensure it's an object, not an array
-    const { cards, messages, ...chatData } = data;
+    // Destructure and rename as needed
+    const { cards, messages, suggestions, ...chatData } = data;
     const responseData = {
       ...chatData,
       card: cards || null,
       messages: messages || [],
+      suggestions: suggestions || [],
     };
 
     res.json(responseData);
@@ -189,6 +228,7 @@ router.post('', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
+  console.log('req.body:', req.body);
 
   const { message, cardId } = req.body;
 
@@ -197,44 +237,109 @@ router.post('', authenticateUser, async (req, res) => {
   }
 
   try {
-    // Create a new chat
-    const newChat = await createNewChat(req.user.id, cardId, 'New Chat');
-
     // If there's an associated card, fetch its content
-    let card = null;
+    let card = undefined;
     if (cardId) {
-      const { data: cardData, error: cardError } = await supabase
+      const { data, error } = await supabase
         .from('cards')
         .select('*')
         .eq('id', cardId)
         .single();
 
-      if (cardError) throw cardError;
-      card = cardData;
+      if (error) throw error;
+      card = data;
     }
 
-    const apiMessages = constructApiMessages([], card);
-    apiMessages.push({ role: 'user', content: message });
+    const apiMessages = prepareMessagesForMessageAndTitleGeneration(
+      message,
+      card
+    );
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: apiMessages,
-    });
+    console.log('Messages sent to AI:', JSON.stringify(apiMessages, null, 2));
 
-    const assistantResponse = completion.choices[0].message.content;
+    // Generate chat title and initial response
+    const { title, response } = await generateChatTitleAndResponse(apiMessages);
+
+    // Create a new chat with the generated title
+    const newChat = await createNewChat(req.user.id, cardId, title);
+
+    // If there's an associated card, update its chat_id
+    if (cardId) {
+      const { error: updateError } = await supabase
+        .from('cards')
+        .update({ chat_id: newChat.id })
+        .eq('id', cardId);
+
+      if (updateError) throw updateError;
+    }
 
     // Add messages to the new chat
     await addMessageToChat(newChat.id, 'user', message);
-    await addMessageToChat(newChat.id, 'assistant', assistantResponse ?? '');
+    await addMessageToChat(newChat.id, 'assistant', response);
 
-    res.json({ chatId: newChat.id, response: assistantResponse });
+    res.json({ chatId: newChat.id, response, title });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Failed to process chat' });
   }
 });
+// router.post('', authenticateUser, async (req, res) => {
+//   if (!req.user) {
+//     return res.status(401).json({ error: 'User not authenticated' });
+//   }
+//   console.log('req.body:', req.body);
+
+//   const { message, cardId } = req.body;
+
+//   if (!message || typeof message !== 'string') {
+//     return res.status(400).json({ error: 'Message is required' });
+//   }
+
+//   try {
+//     // Create a new chat
+//     const newChat = await createNewChat(req.user.id, cardId, 'New Chat');
+
+//     // If there's an associated card, fetch its content
+//     let card = undefined;
+//     if (cardId) {
+//       // First, update the card's chat_id
+//       const { data: updatedCard, error: updateError } = await supabase
+//         .from('cards')
+//         .update({ chat_id: newChat.id })
+//         .eq('id', cardId)
+//         .select()
+//         .single();
+
+//       if (updateError) throw updateError;
+
+//       card = updatedCard;
+//     }
+
+//     const apiMessages = prepareMessagesForMessageGeneration([], card);
+//     apiMessages.push({ role: 'user', content: message });
+
+//     console.log('Messages sent to AI:', JSON.stringify(apiMessages, null, 2));
+
+//     const completion = await openai.chat.completions.create({
+//       model: 'gpt-4o',
+//       messages: apiMessages,
+//     });
+
+//     const assistantResponse = completion.choices[0].message.content;
+
+//     // Add messages to the new chat
+//     await addMessageToChat(newChat.id, 'user', message);
+//     await addMessageToChat(newChat.id, 'assistant', assistantResponse ?? '');
+
+//     res.json({ chatId: newChat.id, response: assistantResponse });
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ error: 'Failed to process chat' });
+//   }
+// });
 
 // Route for existing chats
+
 router.post('/:chatId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -248,37 +353,51 @@ router.post('/:chatId', authenticateUser, async (req, res) => {
   }
 
   try {
-    // get chat history
-    const { data: chatData, error: chatError } = await supabase
+    const { data, error: chatError } = await supabase
       .from('chats')
       .select(
         `
         *,
         cards!chats_card_id_fkey(*),
-        messages!chat_id(*)
+        messages(*),
+        suggestions(*)
       `
       )
       .eq('id', chatId)
       .eq('user_id', req.user.id)
       .single();
 
-    if (chatError || !chatData) {
+    if (chatError) throw chatError;
+    if (!data) {
       return res.status(404).json({ error: 'Chat not found' });
     }
 
-    // put chat in order
-    const sortedMessages = chatData.messages.sort(
-      (a: any, b: any) =>
+    const chat = data as Chat & {
+      cards: Card | null;
+      messages: Message[];
+      suggestions: Suggestion[];
+    };
+
+    const timeline: TimelineItem[] = [
+      ...chat.messages.map((msg) => ({ ...msg, type: 'message' as const })),
+      ...chat.suggestions.map((sugg) => ({
+        ...sugg,
+        type: 'suggestion' as const,
+      })),
+    ].sort(
+      (a, b) =>
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 
-    const { cards: card, ...chat } = chatData;
+    const originatingCard = chat.cards ? chat.cards : undefined;
 
-    // construct the message chain for the LLM
-    const apiMessages = constructApiMessages(sortedMessages, card);
+    const apiMessages = prepareMessagesForMessageGeneration(
+      timeline,
+      originatingCard
+    );
     apiMessages.push({ role: 'user', content: message });
 
-    console.log('Messages sent to AI:', apiMessages);
+    console.log('Messages sent to AI:', JSON.stringify(apiMessages, null, 2));
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -297,42 +416,133 @@ router.post('/:chatId', authenticateUser, async (req, res) => {
   }
 });
 
-function constructApiMessages(
-  messages: any[],
-  card: any | null
-): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
-  const apiMessages: Array<{
-    role: 'system' | 'user' | 'assistant';
-    content: string;
-  }> = [];
-
-  apiMessages.push({
+function prepareMessagesForMessageAndTitleGeneration(
+  initialMessage: string,
+  originatingCard?: Card
+): OpenAIMessage[] {
+  const systemMessage: OpenAIMessage = {
     role: 'system',
-    content: 'You are a helpful assistant for a flashcard application.',
-  });
+    content: `You are an AI assistant engaged in a conversation to help users learn and understand various topics. 
+    Your task is twofold:
+    1. Generate a concise and relevant title for this conversation based on its initial message.
+    2. Provide an informative and engaging response to the user's message.
+    
+    ${MATH_RENDERING_INSTRUCTIONS}
+    `,
+  };
 
-  if (card) {
-    apiMessages.push({
-      role: 'system',
-      content: `Flashcard content:\nFront: ${card.front}\nBack: ${card.back}`,
-    });
+  if (originatingCard) {
+    systemMessage.content += `\n\nThis conversation is starting from a review session based on an existing flashcard:
+    Front: ${originatingCard.front}
+    Back: ${originatingCard.back}
+    
+    Incorporate this flashcard information into your response if relevant.
+    `;
   }
 
-  messages.forEach((msg) => {
-    apiMessages.push({
-      role: msg.role as 'user' | 'assistant',
-      content: msg.content,
-    });
-  });
-
-  return apiMessages;
+  return [systemMessage, { role: 'user', content: initialMessage }];
 }
 
-const createNewChat = async (
+function prepareMessagesForMessageGeneration(
+  timeline: TimelineItem[],
+  originatingCard?: Card
+): OpenAIMessage[] {
+  const systemMessage: OpenAIMessage = {
+    role: 'system',
+    content: `You are an AI assistant engaged in a conversation to help users learn and understand various topics. 
+    The conversation history includes both messages and flashcard suggestions.
+    Your role is to provide informative and engaging responses that build upon the existing conversation and flashcard content.
+    For flashcard suggestions in the conversation, 'Accepted' means the suggestion was turned into a flashcard, 'Rejected' means it wasn't accepted by the user. 
+    You do NOT generate flashcards, you just engage in the conversation
+    
+    ${MATH_RENDERING_INSTRUCTIONS}
+    `,
+  };
+
+  if (originatingCard) {
+    systemMessage.content += `\n\nFYI,This conversation started from a review session based on an existing flashcard:
+    Front: ${originatingCard.front}
+    Back: ${originatingCard.back}.
+    `;
+  }
+
+  const conversationHistory: OpenAIMessage[] = timeline.map(
+    (item): OpenAIMessage => {
+      if (item.type === 'message') {
+        return {
+          role: item.role,
+          content: item.content,
+        };
+      } else {
+        const status = item.card_id ? 'Accepted' : 'Rejected';
+        return {
+          role: 'assistant',
+          content: `[Flashcard Suggestion (${status}):
+        Front: ${item.front}
+        Back: ${item.back}]
+        Keep this suggested flashcard in mind when continuing the conversation. If rejected, consider why it might not have been suitable.`,
+        };
+      }
+    }
+  );
+
+  return [systemMessage, ...conversationHistory];
+}
+
+function prepareMessagesForFlashcardGeneration(
+  timeline: TimelineItem[],
+  originatingCard?: Card
+): OpenAIMessage[] {
+  let systemMessage = `You are an AI assistant that generates flashcards based on conversations. 
+    Analyze the given conversation and create relevant flashcards that capture key information.
+    Focus primarily on the most recent parts of the conversation when generating flashcards.
+    The number of flashcards you generate should depend on the amount and complexity of information in the conversation, with emphasis on recent topics.
+    Generate between 1 to 5 flashcards, focusing on quality and relevance rather than quantity.
+    The conversation history includes both messages and previous flashcard suggestions.
+    For suggestions, 'Accepted' means the suggestion was turned into a flashcard, 'Rejected' means it wasn't.
+    
+    ${MATH_RENDERING_INSTRUCTIONS}
+    `;
+
+  if (originatingCard) {
+    systemMessage += `\n\nThis conversation started from a review session based on an existing flashcard:
+    Front: ${originatingCard.front}
+    Back: ${originatingCard.back}`;
+  }
+
+  const conversationHistory: OpenAIMessage[] = timeline.map((item) => {
+    if (item.type === 'message') {
+      return { role: item.role, content: item.content };
+    } else {
+      const status = item.card_id ? 'Accepted' : 'Rejected';
+      return {
+        role: 'assistant',
+        content: `Suggestion (${status}):
+        Front: ${item.front}
+        Back: ${item.back}`,
+      };
+    }
+  });
+
+  return [
+    { role: 'system', content: systemMessage },
+    {
+      role: 'user',
+      content: `Based on the following conversation, generate appropriate flashcards. 
+      Focus primarily on the most recent parts of the conversation, as these are likely the most relevant for new flashcards.
+      The number of flashcards should reflect the amount of new, substantial information in the recent parts of the conversation, with a maximum of 5 flashcards. 
+      Ensure they are unique and don't duplicate existing flashcards or accepted suggestions.
+      If the recent parts of the conversation don't contain enough new information for flashcards, you may consider information from earlier in the conversation, but prioritize recency.`,
+    },
+    ...conversationHistory,
+  ];
+}
+
+export async function createNewChat(
   userId: string,
-  cardId: string | null,
+  cardId: string | undefined,
   title: string
-) => {
+) {
   const { data, error } = await supabase
     .from('chats')
     .insert({ user_id: userId, card_id: cardId, title })
@@ -341,9 +551,13 @@ const createNewChat = async (
 
   if (error) throw error;
   return data;
-};
+}
 
-async function addMessageToChat(chatId: string, role: string, content: string) {
+export async function addMessageToChat(
+  chatId: string,
+  role: 'user' | 'assistant',
+  content: string
+) {
   const { error } = await supabase
     .from('messages')
     .insert({ chat_id: chatId, role, content });

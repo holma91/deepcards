@@ -8,6 +8,9 @@ export default {
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
       },
+      fontSize: {
+        'sm-plus': '0.9375rem', // This is between sm (0.875rem) and base (1rem)
+      },
       animation: {
         'fade-in-out': 'fadeInOut 3s ease-in-out',
       },
