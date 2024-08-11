@@ -1,27 +1,22 @@
-// src/hooks/useLoginWithGoogle.ts
-import { useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 
 export const useLoginWithGoogle = () => {
-  const [loading, setLoading] = useState(false);
-
-  const loginWithGoogle = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-      if (error) throw error;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert('An unknown error occurred');
-      }
-    } finally {
-      setLoading(false);
+  const loginWithGoogle = async (redirectPath: string) => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}${redirectPath}`,
+        queryParams: {
+          prompt: 'select_account',
+        },
+      },
+    });
+    if (error) {
+      console.error('Google sign-in error:', error.message);
+      return false;
     }
+    return true;
   };
 
-  return { loginWithGoogle, loading };
+  return { loginWithGoogle };
 };

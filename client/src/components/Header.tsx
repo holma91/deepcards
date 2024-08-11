@@ -1,8 +1,7 @@
 // src/components/Header.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import LoginModal from './LoginModal';
 import { Menu, MenuItem, MenuItems, Transition, MenuButton } from '@headlessui/react';
 import { Fragment } from 'react';
 
@@ -14,16 +13,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar }) => {
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
-  const handleAuthAction = async () => {
-    if (session) {
-      await signOut();
-      navigate('/');
-    } else {
-      setIsLoginModalOpen(true);
-    }
-  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -136,24 +125,25 @@ const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar }) =
         <div className="flex items-center">
           <h1 className="text-2xl font-bold text-black">Deepcards</h1>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
           <button
-            onClick={handleAuthAction}
+            onClick={() => navigate('/signin')}
+            className="px-4 py-2 rounded transition-colors bg-white text-black border border-gray-300 hover:bg-gray-100"
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => navigate('/signup')}
             className="px-4 py-2 rounded transition-colors bg-black text-white hover:bg-gray-800"
           >
-            Sign In
+            Sign up
           </button>
         </div>
       </div>
     </div>
   );
 
-  return (
-    <header className="bg-white z-10 h-16">
-      {session ? renderLoggedInHeader() : renderLoggedOutHeader()}
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} isGetStarted={false} />
-    </header>
-  );
+  return <header className="bg-white z-10 h-16">{session ? renderLoggedInHeader() : renderLoggedOutHeader()}</header>;
 };
 
 export default Header;
