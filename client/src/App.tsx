@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
+import Sidebar from './components/layout/Sidebar';
+import Header from './components/layout/Header';
 import LoadingScreen from './components/LoadingScreen';
 
 import PublicHome from './pages/PublicHome';
-import ReviewSession from './pages/ReviewSession';
+import Review from './pages/Review';
 import Cards from './pages/Cards';
 import Chat from './pages/Chat';
 import CardsByDeck from './pages/CardsByDeck';
@@ -37,6 +37,19 @@ const AppContent: React.FC = () => {
 
   const isAuthPage = ['/signup', '/signin'].includes(location.pathname);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsSidebarCollapsed(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -44,13 +57,15 @@ const AppContent: React.FC = () => {
   return (
     <div className="flex h-screen bg-white">
       {session && !isAuthPage && <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />}
-      <div
-        className={`flex flex-col flex-1 ${
-          !isSidebarCollapsed && session && !isAuthPage ? 'ml-64' : ''
-        } transition-all duration-300`}
-      >
-        {!isAuthPage && <Header showSidebarToggle={session && isSidebarCollapsed} onToggleSidebar={toggleSidebar} />}
-        <main className={`flex-1 overflow-auto ${isAuthPage ? 'p-0' : ''}`}>
+      <div className={`flex flex-col flex-1 ${!isSidebarCollapsed && session && !isAuthPage ? 'md:ml-72' : ''}`}>
+        {!isAuthPage && (
+          <Header
+            showSidebarToggle={session ? true : false}
+            onToggleSidebar={toggleSidebar}
+            isSidebarCollapsed={isSidebarCollapsed}
+          />
+        )}
+        <main className={`flex-1 overflow-auto ${isAuthPage ? 'p-0' : 'p-4'}`}>
           <Routes>
             <Route path="/" element={session ? <Navigate to="/chat" replace /> : <PublicHome />} />
             <Route path="/signup" element={session ? <Navigate to="/chat" replace /> : <SignupPage />} />
@@ -65,11 +80,11 @@ const AppContent: React.FC = () => {
             />
             <Route
               path="/review"
-              element={session ? <ReviewSession /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
             />
             <Route
               path="/review/:deckId"
-              element={session ? <ReviewSession /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
             />
             <Route
               path="/cards"

@@ -77,36 +77,41 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
   };
 
   const flashcardContent = (
-    <>
-      <div className="flex justify-between items-center p-4 bg-white shadow-sm">
-        <button onClick={onClose} className="p-2 text-gray-600 hover:text-gray-800 focus:outline-none">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div className="max-w-full sm:max-w-3xl mx-auto space-y-2 sm:space-y-4 px-2 sm:px-0">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-gray-200">
+          <button
+            onClick={onClose}
+            className="p-1 sm:p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <div className="text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
-        <div className="w-6"></div>
-      </div>
-
-      <div className="w-full p-6 bg-white mb-4 shadow-sm">
-        <div className="text-2xl mb-4 font-semibold flex justify-center">
-          <MarkdownRenderer content={card.front} className="text-left" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">{renderDeckInfo(card.decks)}</div>
+          <div className="w-5 sm:w-8"></div> {/* Placeholder for balance */}
         </div>
-        {isRevealed && (
-          <div className="mt-4 pt-2 border-t border-gray-200 w-full">
-            <div className="text-xl flex justify-center">
-              <MarkdownRenderer content={card.back} className="text-left" />
-            </div>
+
+        <div className="p-3 sm:p-6">
+          <div className="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">
+            <MarkdownRenderer content={card.front} className="text-left" />
           </div>
-        )}
+          {isRevealed && (
+            <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+              <div className="text-base sm:text-lg">
+                <MarkdownRenderer content={card.back} className="text-left" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </>
+    </div>
   );
 
   const timeline = chatInfo.data ? createTimeline(chatInfo.data.messages, chatInfo.data.suggestions) : [];
@@ -114,10 +119,13 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
   const sendError = existingChatMutation.error || createChatMutation.error;
 
   return (
-    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto">
+    <div className="flex flex-col h-full w-full max-w-full sm:max-w-3xl mx-auto px-2 sm:px-0">
       {sendError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <span className="block sm:inline">{'Failed to send message. Please try again.'}</span>
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded relative mb-2 sm:mb-4 text-sm sm:text-base"
+          role="alert"
+        >
+          <span className="block sm:inline">Failed to send message. Please try again.</span>
         </div>
       )}
       <BaseChatInterface

@@ -43,22 +43,26 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
   };
 
   return (
-    <div className="w-full my-4">
-      <div className="border border-gray-300 rounded-md overflow-hidden">
-        <div className="p-4 bg-white">
-          <div className="mb-2">
-            <strong>Front:</strong>
-            <MarkdownRenderer content={suggestion.front} className="mt-1" />
+    <div className="w-full my-2 sm:my-4">
+      <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+        <div className="p-3 sm:p-4 bg-white">
+          <div className="mb-3 sm:mb-4">
+            <strong className="text-sm sm:text-base text-gray-700">Front:</strong>
+            <div className="mt-1 text-sm sm:text-base">
+              <MarkdownRenderer content={suggestion.front} />
+            </div>
           </div>
-          <div className="mb-4">
-            <strong>Back:</strong>
-            <MarkdownRenderer content={suggestion.back} className="mt-1" />
+          <div className="mb-4 sm:mb-6">
+            <strong className="text-sm sm:text-base text-gray-700">Back:</strong>
+            <div className="mt-1 text-sm sm:text-base">
+              <MarkdownRenderer content={suggestion.back} />
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
             <select
               value={selectedDeckId}
               onChange={(e) => setSelectedDeckId(e.target.value)}
-              className="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+              className="px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 text-sm sm:text-base"
             >
               <option value="">Select a deck</option>
               {decks?.map((deck: Deck) => (
@@ -70,11 +74,14 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
             <button
               onClick={handleAddToDeck}
               disabled={!selectedDeckId}
-              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm sm:text-base"
             >
               Add to Deck
             </button>
-            <button onClick={handleReject} className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+            <button
+              onClick={handleReject}
+              className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base"
+            >
               Reject
             </button>
           </div>

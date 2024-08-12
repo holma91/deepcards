@@ -13,7 +13,7 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
   return (
-    <div className={`markdown-content ${className || ''}`}>
+    <div className={`markdown-content max-w-full overflow-x-auto ${className || ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -21,17 +21,23 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <SyntaxHighlighter
-                style={dracula}
-                language={match[1]}
-                PreTag="div"
-                {...props}
-                customStyle={{
-                  fontSize: '0.875rem',
-                }}
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <div className=" max-w-[65vw]">
+                <SyntaxHighlighter
+                  style={dracula}
+                  language={match[1]}
+                  PreTag="div"
+                  {...props}
+                  customStyle={{
+                    margin: 0,
+                    fontSize: 'inherit', // This allows us to control the font size via Tailwind classes
+                  }}
+                  codeTagProps={{
+                    className: 'text-xs sm:text-sm md:text-base', // Responsive font sizing
+                  }}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
             ) : (
               <code className={className} {...props}>
                 {children}

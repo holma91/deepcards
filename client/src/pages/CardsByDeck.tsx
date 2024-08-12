@@ -32,8 +32,6 @@ const CardsByDeck: React.FC = () => {
   const deleteCardMutation = useDeleteCard();
   const deleteDeckMutation = useDeleteDeck();
 
-  console.log('cards:', cards);
-
   const handleSubmit = (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     if (deckId && deck) {
@@ -137,53 +135,52 @@ const CardsByDeck: React.FC = () => {
 
   const renderDeckName = () => {
     if (isDeckLoading) {
-      return <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>;
+      return <div className="h-6 sm:h-8 w-32 sm:w-48 bg-gray-200 rounded animate-pulse"></div>;
     }
-    return <h2 className="text-2xl font-bold">Cards in {deck?.name || 'Unnamed Deck'}</h2>;
+    return <h2 className="text-xl sm:text-2xl font-bold truncate">Cards in {deck?.name || 'Unnamed Deck'}</h2>;
   };
 
   const renderCardForm = () => (
-    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 mb-4">
-      <div className="flex-1 flex flex-col">
-        <MarkdownTextarea
-          ref={frontTextareaRef}
-          value={frontContent}
-          onChange={setFrontContent}
-          placeholder="Front (supports markdown)"
-          onKeyDown={handleKeyDown}
-        />
-
-        <div className="h-2"></div>
-        <MarkdownTextarea
-          value={backContent}
-          onChange={setBackContent}
-          placeholder="Back (supports markdown)"
-          onKeyDown={handleKeyDown}
-        />
-        <div className="h-2"></div>
-        <div className="flex gap-2">
-          {editingCard && (
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out"
-            >
-              Cancel
-            </button>
-          )}
-          <button
-            disabled={!frontContent || !backContent}
-            type="submit"
-            className={`${
-              editingCard ? 'flex-1' : 'w-full'
-            } px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition duration-150 ease-in-out`}
-          >
-            {editingCard ? 'Edit Card' : 'Add Card'}
-          </button>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <MarkdownTextarea
+            ref={frontTextareaRef}
+            value={frontContent}
+            onChange={setFrontContent}
+            placeholder="Front (supports markdown)"
+            onKeyDown={handleKeyDown}
+          />
+          <MarkdownTextarea
+            value={backContent}
+            onChange={setBackContent}
+            placeholder="Back (supports markdown)"
+            onKeyDown={handleKeyDown}
+          />
+        </div>
+        <div className="flex-1">
+          <CardPreview front={frontContent} back={backContent} />
         </div>
       </div>
-      <div className="flex-1">
-        <CardPreview front={frontContent} back={backContent} />
+      <div className="flex gap-2">
+        {editingCard && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          disabled={!frontContent || !backContent}
+          type="submit"
+          className={`${
+            editingCard ? 'flex-1' : 'w-full'
+          } px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {editingCard ? 'Edit Card' : 'Add Card'}
+        </button>
       </div>
     </form>
   );
@@ -193,27 +190,27 @@ const CardsByDeck: React.FC = () => {
       return (
         <div className="space-y-4">
           {[...Array(3)].map((_, index) => (
-            <div key={index} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+            <div key={index} className="h-12 sm:h-16 bg-gray-200 rounded animate-pulse"></div>
           ))}
         </div>
       );
     }
     if (cardsError) {
-      return <div className="text-red-500">Error loading cards: {cardsError.message}</div>;
+      return <div className="text-red-500 text-sm sm:text-base">Error loading cards: {cardsError.message}</div>;
     }
     if (!cards || cards.length === 0) {
-      return <div>No cards in this deck yet.</div>;
+      return <div className="text-gray-500 text-sm sm:text-base">No cards in this deck yet.</div>;
     }
     return <CardTable cards={cards} onDeleteCard={handleDeleteCard} onSelectCard={handleSelectCard} />;
   };
 
   return (
-    <div className="w-full px-6 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="w-full px-4 sm:px-6 py-4 sm:py-8">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
         {renderDeckName()}
         <button
           onClick={() => setIsSettingsModalOpen(true)}
-          className="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition duration-150 ease-in-out"
+          className="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />

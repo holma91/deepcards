@@ -6,10 +6,11 @@ interface MarkdownTextareaProps {
   onChange: (value: string) => void;
   placeholder: string;
   onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  className?: string;
 }
 
 const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextareaProps>(
-  ({ value, onChange, placeholder, onKeyDown }, ref) => {
+  ({ value, onChange, placeholder, onKeyDown, className = '' }, ref) => {
     return (
       <TextareaAutosize
         ref={ref}
@@ -17,8 +18,15 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextareaProps>(
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="w-full p-2 font-mono resize-none border border-gray-300 rounded-md shadow-sm focus:ring-black focus:border-black"
+        className={`w-full p-3 font-mono text-sm resize-none border border-gray-200 rounded-md 
+                    focus:ring-2 focus:ring-gray-500 focus:border-transparent 
+                    placeholder-gray-400 transition-all duration-200 ease-in-out
+                    ${className}`}
         minRows={3}
+        style={{
+          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.05)',
+          transition: 'border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+        }}
       />
     );
   }

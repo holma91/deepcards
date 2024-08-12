@@ -25,10 +25,7 @@ const Chat: React.FC = () => {
   const { chatId } = useParams<{ chatId?: string }>();
   const [searchParams] = useSearchParams();
   const cardId = searchParams.get('card_id');
-  console.log('cardId:', cardId);
-
   const navigate = useNavigate();
-
   const [inputValue, setInputValue] = useState('');
 
   const chatInfo = useChatInfo(chatId);
@@ -39,8 +36,6 @@ const Chat: React.FC = () => {
   const handleTopicClick = (topic: string) => {
     setInputValue(`Tell me about: ${topic}`);
   };
-
-  console.log('cardInfo.data:', cardInfo.data);
 
   const handleSendMessage = async (message: string) => {
     try {
@@ -58,60 +53,30 @@ const Chat: React.FC = () => {
     }
   };
 
-  console.log(chatInfo.data);
+  if (chatInfo.isLoading || cardInfo.isLoading) {
+    return <LoadingState />;
+  }
 
-  if (chatInfo.isLoading || cardInfo.isLoading)
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-xl font-semibold">Loading...</div>
-      </div>
-    );
+  if (chatInfo.error || cardInfo.error) {
+    return <ErrorState />;
+  }
 
-  if (chatInfo.error || cardInfo.error)
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-xl font-semibold text-red-600">Error loading data</div>
-      </div>
-    );
-
-  const flashcardContent =
-    cardInfo.data || chatInfo.data?.card ? (
-      <div className="w-full p-6 bg-white mb-4 shadow-sm">
-        <div className="text-2xl mb-4 font-semibold flex justify-center">
-          <MarkdownRenderer content={(cardInfo.data || chatInfo.data?.card)?.front || ''} className="text-left" />
-        </div>
-        <div className="mt-4 pt-2 border-t border-gray-200 w-full">
-          <div className="text-xl flex justify-center">
-            <MarkdownRenderer content={(cardInfo.data || chatInfo.data?.card)?.back || ''} className="text-left" />
-          </div>
-        </div>
-      </div>
-    ) : undefined;
+  const flashcardContent = (cardInfo.data || chatInfo.data?.card) && (
+    <FlashcardContent card={cardInfo.data || chatInfo.data?.card} />
+  );
 
   const timeline = chatInfo.data ? createTimeline(chatInfo.data.messages, chatInfo.data.suggestions) : [];
 
   const sendError = existingChatMutation.error || createChatMutation.error;
 
   return (
-    <div className="flex flex-col h-full w-full min-w-[800px] max-w-3xl mx-auto pt-4">
-      {sendError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <span className="block sm:inline">{'Failed to send message. Please try again.'}</span>
-        </div>
-      )}
+    <div className="flex flex-col h-full w-full max-w-3xl mx-auto pt-4 px-2 sm:px-4">
+      {sendError && <ErrorMessage message="Failed to send message. Please try again." />}
+
       {timeline.length === 0 && !createChatMutation.isPending && !cardId && (
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          {topics.map((topic, index) => (
-            <button
-              key={index}
-              onClick={() => handleTopicClick(topic)}
-              className="p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-left"
-            >
-              {topic}
-            </button>
-          ))}
-        </div>
+        <TopicSuggestions topics={topics} onTopicClick={handleTopicClick} />
       )}
+
       <BaseChatInterface
         chatId={chatId}
         timeline={timeline}
@@ -124,5 +89,53 @@ const Chat: React.FC = () => {
     </div>
   );
 };
+
+const LoadingState: React.FC = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="text-xl font-semibold">Loading...</div>
+  </div>
+);
+
+const ErrorState: React.FC = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="text-xl font-semibold text-red-600">Error loading data</div>
+  </div>
+);
+
+const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
+  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+    <span className="block sm:inline">{message}</span>
+  </div>
+);
+
+const FlashcardContent: React.FC<{ card: any }> = ({ card }) => (
+  <div className="w-full p-3 sm:p-6 bg-white mb-4 border border-gray-200 rounded-lg">
+    <div className="text-base sm:text-lg mb-3 sm:mb-4 font-semibold">
+      <MarkdownRenderer content={card?.front || ''} className="text-left" />
+    </div>
+    <div className="mt-3 sm:mt-4 pt-2 border-t border-gray-200 w-full">
+      <div className="text-sm sm:text-base">
+        <MarkdownRenderer content={card?.back || ''} className="text-left" />
+      </div>
+    </div>
+  </div>
+);
+
+const TopicSuggestions: React.FC<{ topics: string[]; onTopicClick: (topic: string) => void }> = ({
+  topics,
+  onTopicClick,
+}) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
+    {topics.map((topic, index) => (
+      <button
+        key={index}
+        onClick={() => onTopicClick(topic)}
+        className="p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left text-xs sm:text-sm"
+      >
+        {topic}
+      </button>
+    ))}
+  </div>
+);
 
 export default Chat;

@@ -1,4 +1,3 @@
-// src/components/Cards.tsx
 import React from 'react';
 import CardTable from '../components/CardTable';
 import { useAllCards } from '../hooks/useAllCards';
@@ -15,18 +14,20 @@ const Cards: React.FC = () => {
   };
 
   return (
-    <div className="w-full px-6 py-8">
-      <h2 className="text-2xl font-bold mb-6">All Cards</h2>
+    <div className="w-full px-4 sm:px-6 py-4 sm:py-8">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">All Cards</h2>
 
       <div className="w-full bg-white overflow-hidden sm:rounded-lg">
         {isLoadingCards ? (
-          <div className="px-4 py-5 sm:p-6">Loading cards...</div>
+          <div className="px-3 py-4 sm:px-4 sm:py-5">Loading cards...</div>
         ) : cardsError ? (
-          <div className="px-4 py-5 sm:p-6">Error loading cards: {(cardsError as Error).message}</div>
+          <div className="px-3 py-4 sm:px-4 sm:py-5 text-red-600">
+            Error loading cards: {(cardsError as Error).message}
+          </div>
         ) : cards && cards.length > 0 ? (
           <CardTable cards={cards} onDeleteCard={handleDeleteCard} onSelectCard={handleSelectCard} />
         ) : (
-          <div className="px-4 py-5 sm:p-6">No cards found.</div>
+          <div className="px-3 py-4 sm:px-4 sm:py-5">No cards found.</div>
         )}
       </div>
     </div>

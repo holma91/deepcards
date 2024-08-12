@@ -91,30 +91,28 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
     onReview(grade);
   };
 
-  const handleCloseChat = () => {
-    setShowChat(false);
-  };
-
   const renderFlashcard = () => (
-    <div className="w-full max-w-2xl flex flex-col items-center justify-center">
-      <div className="w-full mb-2 text-sm text-gray-500 text-center">{renderDeckInfo(card.decks)}</div>
-      <div className="w-full p-6 bg-white rounded-lg">
-        <div className="text-2xl mb-4 font-semibold flex justify-center">
-          <MarkdownRenderer content={card.front} className="text-left w-full" />
+    <div className="w-full max-w-2xl flex flex-col items-center justify-center px-2 sm:px-0">
+      <div className="w-full mb-2 sm:mb-4 text-xs sm:text-sm text-gray-600 text-center">
+        {renderDeckInfo(card.decks)}
+      </div>
+      <div className="w-full bg-white p-4 sm:p-6">
+        <div className={`text-lg sm:text-xl ${!isRevealed && 'text-center'} mb-4 sm:mb-6`}>
+          <MarkdownRenderer content={card.front} />
         </div>
         {isRevealed && (
-          <div className="mt-4 pt-2 border-t border-gray-200 w-full">
-            <div className="text-xl flex justify-center">
-              <MarkdownRenderer content={card.back} className="text-left w-full" />
+          <div className="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
+            <div className="text-base sm:text-lg">
+              <MarkdownRenderer content={card.back} />
             </div>
           </div>
         )}
         {!isRevealed ? (
-          <div className="flex justify-center mt-4 space-x-4">
+          <div className="flex justify-center mt-4 sm:mt-6 space-x-2 sm:space-x-4">
             <Tooltip text="Press Space/Enter">
               <button
                 onClick={() => setIsRevealed(true)}
-                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Show Answer
               </button>
@@ -125,7 +123,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
                   setLastFocusedGrade(focusedGrade);
                   setShowChat(true);
                 }}
-                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Deep Dive
               </button>
@@ -133,37 +131,35 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
           </div>
         ) : (
           <>
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
-              {[
-                { label: 'Again', grade: 1 },
-                { label: 'Hard', grade: 2 },
-                { label: 'Good', grade: 3 },
-                { label: 'Easy', grade: 4 },
-              ].map(({ label, grade }) => (
-                <button
-                  key={label}
-                  onClick={() => handleGradeClick(grade)}
-                  className={`px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-100 transition-colors flex flex-col items-center ${
-                    focusedGrade === grade ? 'ring-2 ring-gray-500' : ''
-                  }`}
-                  aria-pressed={focusedGrade === grade}
-                >
-                  <span>{label}</span>
-                  <span className="text-xs mt-1 text-gray-500">{getNextReviewTime(grade)}</span>
-                </button>
-              ))}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4 sm:mt-8">
+              {['Again', 'Hard', 'Good', 'Easy'].map((label, index) => {
+                const grade = index + 1;
+                return (
+                  <button
+                    key={label}
+                    ref={(el) => (gradeButtonsRef.current[index] = el)}
+                    onClick={() => handleGradeClick(grade)}
+                    className={`px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm border rounded transition-colors flex flex-col items-center justify-center
+        ${focusedGrade === grade ? 'bg-gray-200 border-gray-400' : 'bg-white border-gray-300 hover:bg-gray-100'}`}
+                    aria-pressed={focusedGrade === grade}
+                  >
+                    <span>{label}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500">{getNextReviewTime(grade)}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="text-center mt-2 text-sm text-gray-500">
+            <div className="text-center mt-2 sm:mt-4 text-xs sm:text-sm text-gray-500">
               Use arrow keys to navigate, Space/Enter to select
             </div>
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-4 sm:mt-6">
               <Tooltip text="Press 'D'">
                 <button
                   onClick={() => {
                     setLastFocusedGrade(focusedGrade);
                     setShowChat(true);
                   }}
-                  className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   Deep Dive
                 </button>
@@ -176,11 +172,11 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   );
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
+    <div className="h-[calc(100vh-104px)] flex flex-col">
       {showChat ? (
-        <CardChatInterface card={card} isRevealed={isRevealed} onClose={handleCloseChat} />
+        <CardChatInterface card={card} isRevealed={isRevealed} onClose={() => setShowChat(false)} />
       ) : (
-        <div className="flex-grow flex items-center justify-center px-6">{renderFlashcard()}</div>
+        <div className="flex-grow flex items-center justify-center px-2 sm:px-6">{renderFlashcard()}</div>
       )}
     </div>
   );
