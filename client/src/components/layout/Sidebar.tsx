@@ -1,4 +1,4 @@
-// src/components/Sidebar.tsx
+// src/components/layout/Sidebar.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';

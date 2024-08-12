@@ -5,6 +5,7 @@ import decksRouter from './routes/decks';
 import chatRouter from './routes/chat';
 import chatsRouter from './routes/chats';
 import suggestionsRouter from './routes/suggestions';
+import profilesRouter from './routes/profiles';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -22,6 +23,7 @@ app.get('/', (req, res) => {
   res.send('Deepcards API is running');
 });
 
+app.use('/api/profiles', profilesRouter);
 app.use('/api/cards', cardsRouter);
 app.use('/api/decks', decksRouter);
 app.use('/api/chat', chatRouter);

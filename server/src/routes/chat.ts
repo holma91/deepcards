@@ -52,7 +52,7 @@ const FlashcardsSchema = z.object({
 
 const MATH_RENDERING_INSTRUCTIONS = `
 Writing math formulas:
-You have a MathJax render environment.
+You have a KATEX render environment.
 - Any LaTeX text between single dollar sign ($) will be rendered as a TeX formula;
 - Use $(tex_formula)$ in-line delimiters to display equations instead of backslash;
 - The render environment only uses $ (single dollarsign) as a container delimiter, never output $$.

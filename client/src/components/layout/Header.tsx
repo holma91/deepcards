@@ -7,9 +7,10 @@ interface HeaderProps {
   showSidebarToggle: boolean;
   onToggleSidebar: () => void;
   isSidebarCollapsed: boolean;
+  onOpenSettings: () => void; // New prop for opening settings modal
 }
 
-const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar, isSidebarCollapsed }) => {
+const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar, isSidebarCollapsed, onOpenSettings }) => {
   const navigate = useNavigate();
   const { session, signOut } = useAuth();
 
@@ -84,7 +85,7 @@ const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar, isS
               <MenuItem>
                 {({ active }) => (
                   <button
-                    onClick={() => navigate('/settings')}
+                    onClick={onOpenSettings}
                     className={`${active ? 'bg-gray-100' : ''} block w-full text-left px-4 py-2 text-sm text-gray-700`}
                   >
                     Settings

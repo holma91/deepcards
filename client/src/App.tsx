@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
+import { ProfileProvider, useProfileContext } from './contexts/ProfileContext';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import LoadingScreen from './components/LoadingScreen';
+import SettingsModal from './components/modals/SettingsModal';
 
 import PublicHome from './pages/PublicHome';
 import Review from './pages/Review';
@@ -18,17 +20,21 @@ function App() {
   return (
     <KeyboardShortcutProvider>
       <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <ProfileProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </ProfileProvider>
       </AuthProvider>
     </KeyboardShortcutProvider>
   );
 }
 
 const AppContent: React.FC = () => {
-  const { session, loading } = useAuth();
+  const { session, loading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useProfileContext();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const location = useLocation();
 
   const toggleSidebar = () => {
@@ -50,19 +56,26 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    if (profile) {
+      console.log(`Theme set to: ${profile.theme}`);
+    }
+  }, [profile]);
+
+  if (authLoading || profileLoading) {
     return <LoadingScreen />;
   }
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className={`flex h-screen bg-white`}>
       {session && !isAuthPage && <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />}
       <div className={`flex flex-col flex-1 ${!isSidebarCollapsed && session && !isAuthPage ? 'md:ml-72' : ''}`}>
         {!isAuthPage && (
           <Header
-            showSidebarToggle={session ? true : false}
+            showSidebarToggle={!!session}
             onToggleSidebar={toggleSidebar}
             isSidebarCollapsed={isSidebarCollapsed}
+            onOpenSettings={() => setIsSettingsModalOpen(true)}
           />
         )}
         <main className={`flex-1 overflow-auto ${isAuthPage ? 'p-0' : 'p-4'}`}>
@@ -97,6 +110,7 @@ const AppContent: React.FC = () => {
           </Routes>
         </main>
       </div>
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
     </div>
   );
 };

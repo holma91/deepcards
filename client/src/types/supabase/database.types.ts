@@ -229,6 +229,38 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          default_chat_model: string
+          id: string
+          review_algorithm: string
+          theme: string
+          updated_at: string | null
+        }
+        Insert: {
+          default_chat_model?: string
+          id: string
+          review_algorithm?: string
+          theme?: string
+          updated_at?: string | null
+        }
+        Update: {
+          default_chat_model?: string
+          id?: string
+          review_algorithm?: string
+          theme?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggestions: {
         Row: {
           back: string
