@@ -283,63 +283,8 @@ router.post('', authenticateUser, async (req, res) => {
     res.status(500).json({ error: 'Failed to process chat' });
   }
 });
-// router.post('', authenticateUser, async (req, res) => {
-//   if (!req.user) {
-//     return res.status(401).json({ error: 'User not authenticated' });
-//   }
-//   console.log('req.body:', req.body);
-
-//   const { message, cardId } = req.body;
-
-//   if (!message || typeof message !== 'string') {
-//     return res.status(400).json({ error: 'Message is required' });
-//   }
-
-//   try {
-//     // Create a new chat
-//     const newChat = await createNewChat(req.user.id, cardId, 'New Chat');
-
-//     // If there's an associated card, fetch its content
-//     let card = undefined;
-//     if (cardId) {
-//       // First, update the card's chat_id
-//       const { data: updatedCard, error: updateError } = await supabase
-//         .from('cards')
-//         .update({ chat_id: newChat.id })
-//         .eq('id', cardId)
-//         .select()
-//         .single();
-
-//       if (updateError) throw updateError;
-
-//       card = updatedCard;
-//     }
-
-//     const apiMessages = prepareMessagesForMessageGeneration([], card);
-//     apiMessages.push({ role: 'user', content: message });
-
-//     console.log('Messages sent to AI:', JSON.stringify(apiMessages, null, 2));
-
-//     const completion = await openai.chat.completions.create({
-//       model: 'gpt-4o',
-//       messages: apiMessages,
-//     });
-
-//     const assistantResponse = completion.choices[0].message.content;
-
-//     // Add messages to the new chat
-//     await addMessageToChat(newChat.id, 'user', message);
-//     await addMessageToChat(newChat.id, 'assistant', assistantResponse ?? '');
-
-//     res.json({ chatId: newChat.id, response: assistantResponse });
-//   } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ error: 'Failed to process chat' });
-//   }
-// });
 
 // Route for existing chats
-
 router.post('/:chatId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -576,6 +521,7 @@ function prepareMessagesForFlashcardGeneration(
     ...conversationHistory,
   ];
 }
+
 export async function createNewChat(
   userId: string,
   cardId: string | undefined,

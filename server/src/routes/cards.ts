@@ -7,63 +7,6 @@ type Card = Database['public']['Tables']['cards']['Row'];
 
 const router = express.Router();
 
-router.get('/stats', authenticateUser, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'User not authenticated' });
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  try {
-    const { data: todayCards, error: todayError } = await supabase
-      .from('cards')
-      .select('created_at, last_reviewed_at')
-      .eq('user_id', req.user.id)
-      .gte('created_at', today.toISOString());
-
-    if (todayError) {
-      console.error("Error fetching today's cards:", todayError);
-      return res
-        .status(500)
-        .json({ error: "Failed to fetch today's card data" });
-    }
-
-    const { data: allTimeCards, error: allTimeError } = await supabase
-      .from('cards')
-      .select('created_at, last_reviewed_at')
-      .eq('user_id', req.user.id);
-
-    if (allTimeError) {
-      console.error('Error fetching all-time cards:', allTimeError);
-      return res
-        .status(500)
-        .json({ error: 'Failed to fetch all-time card data' });
-    }
-
-    const stats = {
-      today: {
-        reviewed: todayCards.filter(
-          (card) =>
-            card.last_reviewed_at && new Date(card.last_reviewed_at) >= today
-        ).length,
-        added: todayCards.length,
-      },
-      allTime: {
-        reviewed: allTimeCards.filter((card) => card.last_reviewed_at).length,
-        added: allTimeCards.length,
-      },
-    };
-
-    res.json(stats);
-  } catch (error) {
-    console.error('Unexpected error in stats route:', error);
-    res.status(500).json({
-      error: 'An unexpected error occurred while fetching statistics',
-    });
-  }
-});
-
 // Get cards due for review (across all decks)
 router.get('/due', authenticateUser, async (req, res) => {
   if (!req.user) {
@@ -553,30 +496,6 @@ function reviewCard(card: Card, grade: number) {
   card.last_reviewed_at = new Date().toISOString();
 
   return card;
-}
-
-function calculateNextReview(
-  card: Card,
-  grade: number
-): { interval: number; ease_factor: number } {
-  let { interval, ease_factor } = card;
-
-  if (grade >= 3) {
-    if (interval === 0) {
-      interval = 1;
-    } else if (interval === 1) {
-      interval = 6;
-    } else {
-      interval = Math.round(interval * ease_factor);
-    }
-  } else {
-    interval = 0;
-  }
-
-  ease_factor = ease_factor + (0.1 - (5 - grade) * (0.08 + (5 - grade) * 0.02));
-  ease_factor = Math.max(1.3, ease_factor);
-
-  return { interval, ease_factor };
 }
 
 export default router;
