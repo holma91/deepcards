@@ -4,6 +4,7 @@ import Flashcard from '../components/Flashcard';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
 import { useAllDueCards } from '../hooks/useAllDueCards';
 import { useDeckDueCards } from '../hooks/useDeckDueCards';
+import LoadingScreen from '../components/LoadingScreen';
 
 const Review: React.FC = () => {
   const { deckId } = useParams<{ deckId?: string }>();
@@ -25,7 +26,7 @@ const Review: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (isPending) return <LoadingState />;
+    if (isPending) return <LoadingScreen />;
     if (isError) return <ErrorState error={error} onRetry={refetch} />;
     if (!cards || cards.length === 0) return <EmptyState />;
     return <Flashcard key={cards[0].id} card={cards[0]} onReview={handleReview} />;
@@ -37,13 +38,6 @@ const Review: React.FC = () => {
     </div>
   );
 };
-
-const LoadingState: React.FC = () => (
-  <div className="text-center">
-    <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-t-2 border-b-2 border-gray-900 mb-2 sm:mb-4"></div>
-    <p className="text-lg sm:text-xl text-gray-600">Loading cards...</p>
-  </div>
-);
 
 const ErrorState: React.FC<{ error: Error | null; onRetry: () => void }> = ({ error, onRetry }) => (
   <div className="text-center px-4">

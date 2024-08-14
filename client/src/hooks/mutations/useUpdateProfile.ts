@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { Profile } from '../useProfile';
+import { Profile } from '../../types';
 
 type UpdateProfileParams = Partial<Omit<Profile, 'id' | 'updated_at'>>;
 

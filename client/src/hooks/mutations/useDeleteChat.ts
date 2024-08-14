@@ -26,6 +26,16 @@ export const useDeleteChat = () => {
     mutationFn: deleteChat,
     onSuccess: (_, chatId) => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
+
+      // below invalidations are necessary when deleting chats in review mode
+      queryClient.invalidateQueries({ queryKey: ['cards', 'due'] });
+
+      // Invalidate all deck-specific due cards queries
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'cards' && query.queryKey[1] === 'due' && query.queryKey.length === 3,
+      });
+
       queryClient.removeQueries({ queryKey: ['messages', chatId] });
     },
   });

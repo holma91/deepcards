@@ -1,9 +1,9 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
-import openai from '../openaiClient';
-import { supabase } from '../supabaseClient';
+import openai from '../lib/openaiClient';
+import { supabase } from '../lib/supabaseClient';
 import { z } from 'zod';
-import instructor from '../instructorClient';
+import instructor from '../lib/instructorClient';
 import { Database } from '../types/supabase/database.types';
 
 type Chat = Database['public']['Tables']['chats']['Row'];
@@ -452,7 +452,10 @@ function prepareMessagesForMessageGeneration(
     content: `You are an AI assistant engaged in a conversation to help users learn and understand various topics. 
     The conversation history includes both messages and flashcard suggestions.
     Your role is to provide informative and engaging responses that build upon the existing conversation and flashcard content.
-    For flashcard suggestions in the conversation, 'Accepted' means the suggestion was turned into a flashcard, 'Rejected' means it wasn't accepted by the user. 
+    For flashcard suggestions in the conversation:
+    - 'Accepted' means the suggestion was turned into a flashcard
+    - 'Rejected' means it wasn't accepted by the user
+    - 'Modified' means the user edited the suggestion before accepting it
     You do NOT generate flashcards, you just engage in the conversation
     
     ${MATH_RENDERING_INSTRUCTIONS}
@@ -460,7 +463,7 @@ function prepareMessagesForMessageGeneration(
   };
 
   if (originatingCard) {
-    systemMessage.content += `\n\nFYI,This conversation started from a review session based on an existing flashcard:
+    systemMessage.content += `\n\nFYI, This conversation started from a review session based on an existing flashcard:
     Front: ${originatingCard.front}
     Back: ${originatingCard.back}.
     `;
@@ -474,13 +477,30 @@ function prepareMessagesForMessageGeneration(
           content: item.content,
         };
       } else {
-        const status = item.card_id ? 'Accepted' : 'Rejected';
+        let status = 'Rejected';
+        if (item.card_id) {
+          status =
+            item.modified_front || item.modified_back
+              ? 'Accepted after modification'
+              : 'Accepted';
+        }
+
+        let content = `[Flashcard Suggestion (${status}):
+        Front: ${item.front}
+        Back: ${item.back}`;
+
+        if (item.modified_front || item.modified_back) {
+          content += `
+        Modified Front: ${item.modified_front || item.front}
+        Modified Back: ${item.modified_back || item.back}`;
+        }
+
+        content += `]
+        Keep this suggested flashcard in mind when continuing the conversation. If rejected, consider why it might not have been suitable. If modified, consider the changes made.`;
+
         return {
           role: 'assistant',
-          content: `[Flashcard Suggestion (${status}):
-        Front: ${item.front}
-        Back: ${item.back}]
-        Keep this suggested flashcard in mind when continuing the conversation. If rejected, consider why it might not have been suitable.`,
+          content: content,
         };
       }
     }
@@ -499,7 +519,10 @@ function prepareMessagesForFlashcardGeneration(
     The number of flashcards you generate should depend on the amount and complexity of information in the conversation, with emphasis on recent topics.
     Generate between 1 to 5 flashcards, focusing on quality and relevance rather than quantity.
     The conversation history includes both messages and previous flashcard suggestions.
-    For suggestions, 'Accepted' means the suggestion was turned into a flashcard, 'Rejected' means it wasn't.
+    For suggestions:
+    - 'Accepted' means the suggestion was turned into a flashcard
+    - 'Rejected' means it wasn't accepted by the user
+    - 'Modified' means the user edited the suggestion before accepting it
     
     ${MATH_RENDERING_INSTRUCTIONS}
     `;
@@ -514,12 +537,27 @@ function prepareMessagesForFlashcardGeneration(
     if (item.type === 'message') {
       return { role: item.role, content: item.content };
     } else {
-      const status = item.card_id ? 'Accepted' : 'Rejected';
+      let status = 'Rejected';
+      if (item.card_id) {
+        status =
+          item.modified_front || item.modified_back
+            ? 'Accepted after modification'
+            : 'Accepted';
+      }
+
+      let content = `Suggestion (${status}):
+        Front: ${item.front}
+        Back: ${item.back}`;
+
+      if (item.modified_front || item.modified_back) {
+        content += `
+        Modified Front: ${item.modified_front || item.front}
+        Modified Back: ${item.modified_back || item.back}`;
+      }
+
       return {
         role: 'assistant',
-        content: `Suggestion (${status}):
-        Front: ${item.front}
-        Back: ${item.back}`,
+        content: content,
       };
     }
   });
@@ -532,12 +570,12 @@ function prepareMessagesForFlashcardGeneration(
       Focus primarily on the most recent parts of the conversation, as these are likely the most relevant for new flashcards.
       The number of flashcards should reflect the amount of new, substantial information in the recent parts of the conversation, with a maximum of 5 flashcards. 
       Ensure they are unique and don't duplicate existing flashcards or accepted suggestions.
-      If the recent parts of the conversation don't contain enough new information for flashcards, you may consider information from earlier in the conversation, but prioritize recency.`,
+      If the recent parts of the conversation don't contain enough new information for flashcards, you may consider information from earlier in the conversation, but prioritize recency.
+      When considering modified suggestions, pay attention to the changes made by the user as they may indicate important nuances or corrections.`,
     },
     ...conversationHistory,
   ];
 }
-
 export async function createNewChat(
   userId: string,
   cardId: string | undefined,

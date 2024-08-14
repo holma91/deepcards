@@ -1,14 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../utils/supabaseClient';
 import { API_BASE_URL } from '../config';
-
-export interface Profile {
-  id: string;
-  theme: 'light' | 'dark' | 'system';
-  review_algorithm: 'basic' | 'supermemo';
-  default_chat_model: 'gpt-3.5-turbo' | 'gpt-4';
-  updated_at: string;
-}
+import { Profile } from '../types';
 
 const fetchProfile = async (): Promise<Profile> => {
   const {

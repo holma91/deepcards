@@ -1,26 +1,35 @@
 // src/hooks/mutations/useUpdateSuggestion.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../../config';
-import { SuggestionStatus } from '../../types';
+import { Suggestion, SuggestionStatus } from '../../types';
 import { supabase } from '../../utils/supabaseClient';
 
 interface UpdateSuggestionParams {
   suggestionId: string;
-  status: SuggestionStatus;
+  chatId: string;
+  status?: SuggestionStatus;
+  modified_front?: string;
+  modified_back?: string;
 }
 
-const updateSuggestion = async ({ suggestionId, status }: UpdateSuggestionParams) => {
+const updateSuggestion = async ({
+  suggestionId,
+  status,
+  modified_front,
+  modified_back,
+}: UpdateSuggestionParams): Promise<Suggestion> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) throw new Error('No active session');
+
   const response = await fetch(`${API_BASE_URL}/suggestions/${suggestionId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, modified_front, modified_back }),
   });
 
   if (!response.ok) {
@@ -35,8 +44,33 @@ export const useUpdateSuggestion = () => {
 
   return useMutation({
     mutationFn: updateSuggestion,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chatInfo'] });
+    onMutate: async ({ suggestionId, chatId, status, modified_front, modified_back }) => {
+      await queryClient.cancelQueries({ queryKey: ['pendingSuggestions', chatId] });
+
+      const previousSuggestions = queryClient.getQueryData<Suggestion[]>(['pendingSuggestions', chatId]);
+
+      queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', chatId], (old = []) => {
+        return old.map((suggestion) => {
+          if (suggestion.id === suggestionId) {
+            return {
+              ...suggestion,
+              status: status ?? suggestion.status,
+              modified_front: modified_front ?? suggestion.modified_front,
+              modified_back: modified_back ?? suggestion.modified_back,
+            };
+          }
+          return suggestion;
+        });
+      });
+
+      return { previousSuggestions };
+    },
+    onError: (_, { chatId }, context) => {
+      queryClient.setQueryData(['pendingSuggestions', chatId], context?.previousSuggestions);
+    },
+    onSettled: (_, __, { chatId }) => {
+      queryClient.invalidateQueries({ queryKey: ['pendingSuggestions', chatId] });
+      queryClient.invalidateQueries({ queryKey: ['chatInfo', chatId] });
     },
   });
 };

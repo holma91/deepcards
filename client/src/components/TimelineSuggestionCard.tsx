@@ -39,13 +39,13 @@ const TimelineSuggestionCard: React.FC<TimelineSuggestionCardProps> = ({ suggest
             <div className="mb-3 sm:mb-4">
               <strong className="text-sm sm:text-base text-gray-700">Front:</strong>
               <div className="mt-1 text-sm sm:text-base">
-                <MarkdownRenderer content={suggestion.front} />
+                <MarkdownRenderer content={suggestion.modified_front || suggestion.front} />
               </div>
             </div>
             <div>
               <strong className="text-sm sm:text-base text-gray-700">Back:</strong>
               <div className="mt-1 text-sm sm:text-base">
-                <MarkdownRenderer content={suggestion.back} />
+                <MarkdownRenderer content={suggestion.modified_back || suggestion.back} />
               </div>
             </div>
           </div>

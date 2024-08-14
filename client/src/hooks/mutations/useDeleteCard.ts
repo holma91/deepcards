@@ -7,7 +7,7 @@ import { DeckDueCount } from '../useDecksDueCounts';
 
 interface DeleteCardParams {
   cardId: string;
-  deckId: string;
+  deckId?: string;
 }
 
 const deleteCard = async ({ cardId }: DeleteCardParams): Promise<void> => {
@@ -35,36 +35,55 @@ export const useDeleteCard = () => {
   return useMutation({
     mutationFn: deleteCard,
     onMutate: async ({ cardId, deckId }: DeleteCardParams) => {
-      await queryClient.cancelQueries({ queryKey: ['cards', deckId] });
+      // Cancel queries
+      await queryClient.cancelQueries({ queryKey: ['cards'] });
+      if (deckId) {
+        await queryClient.cancelQueries({ queryKey: ['cards', deckId] });
+      }
       await queryClient.cancelQueries({ queryKey: ['decks', 'dueCounts'] });
 
-      const previousCards = queryClient.getQueryData<Card[]>(['cards', deckId]);
+      // Snapshot previous values
+      const previousAllCards = queryClient.getQueryData<Card[]>(['cards']);
+      const previousDeckCards = deckId ? queryClient.getQueryData<Card[]>(['cards', deckId]) : undefined;
       const previousDueCounts = queryClient.getQueryData<DeckDueCount[]>(['decks', 'dueCounts']);
 
-      queryClient.setQueryData<Card[]>(['cards', deckId], (old = []) => old.filter((card) => card.id !== cardId));
+      // Optimistically update
+      queryClient.setQueryData<Card[]>(['cards'], (old = []) => old.filter((card) => card.id !== cardId));
 
-      const cardToDelete = previousCards?.find((card) => card.id === cardId);
+      if (deckId) {
+        queryClient.setQueryData<Card[]>(['cards', deckId], (old = []) => old.filter((card) => card.id !== cardId));
+      }
+
+      const cardToDelete = previousAllCards?.find((card) => card.id === cardId);
       if (cardToDelete && new Date(cardToDelete.next_review) <= new Date()) {
         queryClient.setQueryData<DeckDueCount[]>(['decks', 'dueCounts'], (old = []) =>
           old.map((deck) => (deck.id === deckId ? { ...deck, due_count: Math.max(0, deck.due_count - 1) } : deck))
         );
       }
 
-      return { previousCards, previousDueCounts, deckId };
+      return { previousAllCards, previousDeckCards, previousDueCounts, deckId };
     },
     onError: (_, __, context) => {
-      if (context?.previousCards) {
-        queryClient.setQueryData(['cards', context.deckId], context.previousCards);
+      // Rollback on error
+      if (context?.previousAllCards) {
+        queryClient.setQueryData(['cards'], context.previousAllCards);
+      }
+      if (context?.deckId && context?.previousDeckCards) {
+        queryClient.setQueryData(['cards', context.deckId], context.previousDeckCards);
       }
       if (context?.previousDueCounts) {
         queryClient.setQueryData(['decks', 'dueCounts'], context.previousDueCounts);
       }
     },
     onSettled: (_, __, { deckId }) => {
-      queryClient.invalidateQueries({ queryKey: ['cards', deckId] });
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      if (deckId) {
+        queryClient.invalidateQueries({ queryKey: ['cards', deckId] });
+        queryClient.invalidateQueries({ queryKey: ['cards', 'due', deckId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
       queryClient.invalidateQueries({ queryKey: ['cards', 'due'] });
-      queryClient.invalidateQueries({ queryKey: ['cards', 'due', deckId] });
     },
   });
 };

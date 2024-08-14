@@ -12,10 +12,11 @@ import MarkdownTextarea from '../components/MarkdownTextArea';
 import { Card } from '../types';
 import { useUpdateCard } from '../hooks/mutations/useUpdateCard';
 import DeckSettingsModal from '../components/modals/DeckSettingsModal';
+import { useAllCards } from '../hooks/useAllCards';
 
 const CardsByDeck: React.FC = () => {
   const navigate = useNavigate();
-  const { deckId } = useParams() as { deckId: string };
+  const { deckId } = useParams<{ deckId?: string }>();
 
   const [frontContent, setFrontContent] = useState('');
   const [backContent, setBackContent] = useState('');
@@ -25,7 +26,12 @@ const CardsByDeck: React.FC = () => {
   const frontTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: deck, isLoading: isDeckLoading } = useDeck(deckId);
-  const { data: cards, isLoading: isCardsLoading, error: cardsError } = useDeckCards(deckId);
+  const { data: deckCards, isLoading: isDeckCardsLoading, error: deckCardsError } = useDeckCards(deckId);
+  const { data: allCards, isLoading: isAllCardsLoading, error: allCardsError } = useAllCards();
+
+  const cards = deckId ? deckCards : allCards;
+  const isCardsLoading = deckId ? isDeckCardsLoading : isAllCardsLoading;
+  const cardsError = deckId ? deckCardsError : allCardsError;
 
   const createCardMutation = useCreateCard();
   const updateCardMutation = useUpdateCard();
@@ -34,26 +40,24 @@ const CardsByDeck: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
-    if (deckId && deck) {
-      if (editingCard) {
-        updateCardMutation.mutate({
-          id: editingCard.id,
-          front: frontContent,
-          back: backContent,
-          deckId,
-        });
-      } else {
-        createCardMutation.mutate({
-          front: frontContent,
-          back: backContent,
-          deckName: deck.name,
-          deckId,
-        });
-      }
-      setFrontContent('');
-      setBackContent('');
-      setEditingCard(null);
+    if (editingCard) {
+      updateCardMutation.mutate({
+        id: editingCard.id,
+        front: frontContent,
+        back: backContent,
+        deckId: deckId || undefined,
+      });
+    } else if (deckId && deck) {
+      createCardMutation.mutate({
+        front: frontContent,
+        back: backContent,
+        deckName: deck.name,
+        deckId,
+      });
     }
+    setFrontContent('');
+    setBackContent('');
+    setEditingCard(null);
   };
 
   const handleSelectCard = (card: Card) => {
@@ -79,19 +83,17 @@ const CardsByDeck: React.FC = () => {
   };
 
   const handleDeleteCard = (cardId: string) => {
-    if (deckId) {
-      deleteCardMutation.mutate(
-        { cardId, deckId },
-        {
-          onSuccess: () => {
-            console.log('Card deleted successfully');
-          },
-          onError: (error) => {
-            console.error('Failed to delete card:', error);
-          },
-        }
-      );
-    }
+    deleteCardMutation.mutate(
+      { cardId, deckId },
+      {
+        onSuccess: () => {
+          console.log('Card deleted successfully');
+        },
+        onError: (error) => {
+          console.error('Failed to delete card:', error);
+        },
+      }
+    );
   };
 
   const handleDeleteDeck = () => {
@@ -134,56 +136,64 @@ const CardsByDeck: React.FC = () => {
   }, [editingCard]);
 
   const renderDeckName = () => {
-    if (isDeckLoading) {
-      return <div className="h-6 sm:h-8 w-32 sm:w-48 bg-gray-200 rounded animate-pulse"></div>;
+    if (deckId) {
+      if (isDeckLoading) {
+        return <div className="h-6 sm:h-8 w-32 sm:w-48 bg-gray-200 rounded animate-pulse"></div>;
+      }
+      return <h2 className="text-xl sm:text-2xl font-bold truncate">Cards in {deck?.name || 'Unnamed Deck'}</h2>;
     }
-    return <h2 className="text-xl sm:text-2xl font-bold truncate">Cards in {deck?.name || 'Unnamed Deck'}</h2>;
+    return <h2 className="text-xl sm:text-2xl font-bold truncate">All Cards</h2>;
   };
 
-  const renderCardForm = () => (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-2">
-          <MarkdownTextarea
-            ref={frontTextareaRef}
-            value={frontContent}
-            onChange={setFrontContent}
-            placeholder="Front (supports markdown)"
-            onKeyDown={handleKeyDown}
-          />
-          <MarkdownTextarea
-            value={backContent}
-            onChange={setBackContent}
-            placeholder="Back (supports markdown)"
-            onKeyDown={handleKeyDown}
-          />
+  const renderCardForm = () => {
+    // Don't render the form if there's no deckId and we're not editing
+    if (!deckId && !editingCard) return null;
+
+    return (
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-2">
+            <MarkdownTextarea
+              ref={frontTextareaRef}
+              value={frontContent}
+              onChange={setFrontContent}
+              placeholder="Front (supports markdown)"
+              onKeyDown={handleKeyDown}
+            />
+            <MarkdownTextarea
+              value={backContent}
+              onChange={setBackContent}
+              placeholder="Back (supports markdown)"
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+          <div className="flex-1">
+            <CardPreview front={frontContent} back={backContent} />
+          </div>
         </div>
-        <div className="flex-1">
-          <CardPreview front={frontContent} back={backContent} />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        {editingCard && (
+        <div className="flex gap-2">
+          {editingCard && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
           <button
-            type="button"
-            onClick={handleCancel}
-            className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+            disabled={!frontContent || !backContent}
+            type="submit"
+            className={`${
+              editingCard ? 'flex-1' : 'w-full'
+            } px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            Cancel
+            {editingCard ? 'Save Changes' : 'Add Card'}
           </button>
-        )}
-        <button
-          disabled={!frontContent || !backContent}
-          type="submit"
-          className={`${
-            editingCard ? 'flex-1' : 'w-full'
-          } px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {editingCard ? 'Edit Card' : 'Add Card'}
-        </button>
-      </div>
-    </form>
-  );
+        </div>
+      </form>
+    );
+  };
 
   const renderCardTable = () => {
     if (isCardsLoading) {
@@ -199,7 +209,7 @@ const CardsByDeck: React.FC = () => {
       return <div className="text-red-500 text-sm sm:text-base">Error loading cards: {cardsError.message}</div>;
     }
     if (!cards || cards.length === 0) {
-      return <div className="text-gray-500 text-sm sm:text-base">No cards in this deck yet.</div>;
+      return <div className="text-gray-500 text-sm sm:text-base">No cards found.</div>;
     }
     return <CardTable cards={cards} onDeleteCard={handleDeleteCard} onSelectCard={handleSelectCard} />;
   };
@@ -208,20 +218,22 @@ const CardsByDeck: React.FC = () => {
     <div className="w-full px-4 sm:px-6 py-4 sm:py-8">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         {renderDeckName()}
-        <button
-          onClick={() => setIsSettingsModalOpen(true)}
-          className="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-          </svg>
-        </button>
+        {deckId && (
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="p-2 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {renderCardForm()}
       {renderCardTable()}
 
-      {deck && (
+      {deckId && deck && (
         <DeckSettingsModal
           isOpen={isSettingsModalOpen}
           onClose={() => setIsSettingsModalOpen(false)}

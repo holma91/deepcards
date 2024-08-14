@@ -10,7 +10,6 @@ import SettingsModal from './components/modals/SettingsModal';
 
 import PublicHome from './pages/PublicHome';
 import Review from './pages/Review';
-import Cards from './pages/Cards';
 import Chat from './pages/Chat';
 import CardsByDeck from './pages/CardsByDeck';
 import SignupPage from './pages/SignUpPage';
@@ -45,7 +44,8 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      // lg breakpoint
+      if (window.innerWidth < 1024) {
         setIsSidebarCollapsed(true);
       }
     };
@@ -69,7 +69,7 @@ const AppContent: React.FC = () => {
   return (
     <div className={`flex h-screen bg-white`}>
       {session && !isAuthPage && <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />}
-      <div className={`flex flex-col flex-1 ${!isSidebarCollapsed && session && !isAuthPage ? 'md:ml-72' : ''}`}>
+      <div className={`flex flex-col flex-1 ${!isSidebarCollapsed && session && !isAuthPage ? 'lg:ml-72' : ''}`}>
         {!isAuthPage && (
           <Header
             showSidebarToggle={!!session}
@@ -101,7 +101,7 @@ const AppContent: React.FC = () => {
             />
             <Route
               path="/cards"
-              element={session ? <Cards /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              element={session ? <CardsByDeck /> : <Navigate to="/signin" state={{ from: location }} replace />}
             />
             <Route
               path="/cards/:deckId"

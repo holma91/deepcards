@@ -20,10 +20,10 @@ const fetchDeckCards = async (deckId: string): Promise<Card[]> => {
   return response.json();
 };
 
-export const useDeckCards = (deckId: string) => {
+export const useDeckCards = (deckId: string | undefined) => {
   return useQuery({
     queryKey: ['cards', deckId],
-    queryFn: () => fetchDeckCards(deckId),
+    queryFn: () => fetchDeckCards(deckId as string),
     enabled: !!deckId,
   });
 };

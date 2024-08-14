@@ -93,13 +93,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 bg-black bg-opacity-50 z-20 transition-opacity duration-300 lg:hidden ${
           isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
         }`}
         onClick={onToggle}
       ></div>
       <nav
-        className={`bg-gray-100 h-screen w-64 md:w-72 flex flex-col fixed top-0 left-0 z-30 transform transition-transform duration-300 ${
+        className={`bg-gray-100 h-screen w-64 lg:w-72 flex flex-col fixed top-0 left-0 z-30 transform transition-transform duration-300 ${
           isCollapsed ? '-translate-x-full' : 'translate-x-0'
         }`}
       >

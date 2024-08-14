@@ -1,8 +1,35 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import { Database } from '../types/supabase/database.types';
 
 const router = express.Router();
+
+// get pending suggestions for a chat
+router.get('/pending/:chatId', authenticateUser, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'User not authenticated' });
+  }
+
+  const { chatId } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from('suggestions')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('chat_id', chatId)
+      .eq('status', 'pending')
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching pending suggestions:', error);
+    res.status(500).json({ error: 'Failed to fetch pending suggestions' });
+  }
+});
 
 router.delete('/', authenticateUser, async (req, res) => {
   if (!req.user) {
@@ -32,19 +59,40 @@ router.delete('/', authenticateUser, async (req, res) => {
   }
 });
 
+type SuggestionUpdate = Database['public']['Tables']['suggestions']['Update'];
+
 router.patch('/:suggestionId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
 
   const { suggestionId } = req.params;
-  const { status } = req.body;
+  const { status, modified_front, modified_back } = req.body;
 
   try {
+    const updateData: SuggestionUpdate = {};
+
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    if (modified_front !== undefined) {
+      updateData.modified_front = modified_front;
+    }
+
+    if (modified_back !== undefined) {
+      updateData.modified_back = modified_back;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid update data provided' });
+    }
+
     const { data, error } = await supabase
       .from('suggestions')
-      .update({ status })
+      .update(updateData)
       .eq('id', suggestionId)
+      .eq('user_id', req.user.id)
       .single();
 
     if (error) throw error;
@@ -56,6 +104,8 @@ router.patch('/:suggestionId', authenticateUser, async (req, res) => {
   }
 });
 
+type InsertCard = Database['public']['Tables']['cards']['Insert'];
+
 router.post('/:suggestionId/accept', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -65,28 +115,33 @@ router.post('/:suggestionId/accept', authenticateUser, async (req, res) => {
   const { deckId, deckName } = req.body;
 
   try {
-    // First, update the suggestion
+    // Update the suggestion and fetch its data
     const { data: suggestionData, error: suggestionError } = await supabase
       .from('suggestions')
       .update({ status: 'accepted' })
       .eq('id', suggestionId)
-      .select();
+      .select('*')
+      .single();
 
     if (suggestionError) throw suggestionError;
-    if (!suggestionData || suggestionData.length === 0) {
+    if (!suggestionData) {
       throw new Error('Suggestion not found');
     }
 
-    const updatedSuggestion = suggestionData[0];
+    const updatedSuggestion = suggestionData;
 
-    // Then, create a new card
+    const cardFront =
+      updatedSuggestion.modified_front || updatedSuggestion.front;
+    const cardBack = updatedSuggestion.modified_back || updatedSuggestion.back;
+
+    // Create a new card
     const { data: cardData, error: cardError } = await supabase
       .from('cards')
       .insert({
         user_id: req.user.id,
-        front: updatedSuggestion.front,
-        back: updatedSuggestion.back,
-      })
+        front: cardFront,
+        back: cardBack,
+      } as InsertCard)
       .select();
 
     if (cardError) throw cardError;

@@ -49,8 +49,9 @@ export type Database = {
           id: string
           interval: number
           last_reviewed_at: string | null
+          learning_step: number
           next_review: string
-          stage: number
+          status: Database["public"]["Enums"]["card_status"]
           user_id: string
         }
         Insert: {
@@ -62,8 +63,9 @@ export type Database = {
           id?: string
           interval?: number
           last_reviewed_at?: string | null
+          learning_step?: number
           next_review?: string
-          stage?: number
+          status?: Database["public"]["Enums"]["card_status"]
           user_id: string
         }
         Update: {
@@ -75,8 +77,9 @@ export type Database = {
           id?: string
           interval?: number
           last_reviewed_at?: string | null
+          learning_step?: number
           next_review?: string
-          stage?: number
+          status?: Database["public"]["Enums"]["card_status"]
           user_id?: string
         }
         Relationships: [
@@ -269,6 +272,8 @@ export type Database = {
           created_at: string
           front: string
           id: string
+          modified_back: string | null
+          modified_front: string | null
           status: Database["public"]["Enums"]["suggestion_status"]
           user_id: string
         }
@@ -279,6 +284,8 @@ export type Database = {
           created_at?: string
           front: string
           id?: string
+          modified_back?: string | null
+          modified_front?: string | null
           status?: Database["public"]["Enums"]["suggestion_status"]
           user_id: string
         }
@@ -289,6 +296,8 @@ export type Database = {
           created_at?: string
           front?: string
           id?: string
+          modified_back?: string | null
+          modified_front?: string | null
           status?: Database["public"]["Enums"]["suggestion_status"]
           user_id?: string
         }
@@ -324,6 +333,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      card_status: "learning" | "reviewing" | "relearning"
       message_role: "system" | "user" | "assistant"
       suggestion_status: "pending" | "accepted" | "rejected"
     }

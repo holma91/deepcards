@@ -1,15 +1,15 @@
 // src/hooks/mutations/useDeleteSuggestions.ts
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
+import { Suggestion } from '../../types';
 
 interface DeleteSuggestionsParams {
   suggestionIds: string[];
   chatId: string;
 }
 
-const deleteSuggestions = async ({ suggestionIds }: DeleteSuggestionsParams): Promise<void> => {
+const deleteSuggestions = async ({ suggestionIds }: DeleteSuggestionsParams): Promise<Suggestion[]> => {
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -24,10 +24,8 @@ const deleteSuggestions = async ({ suggestionIds }: DeleteSuggestionsParams): Pr
     body: JSON.stringify({ suggestionIds }),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to delete suggestions');
-  }
+  if (!response.ok) throw new Error('Failed to delete suggestions');
+  return response.json();
 };
 
 export const useDeleteSuggestions = () => {
@@ -36,22 +34,21 @@ export const useDeleteSuggestions = () => {
   return useMutation({
     mutationFn: deleteSuggestions,
     onMutate: async ({ suggestionIds, chatId }) => {
-      await queryClient.cancelQueries({ queryKey: ['chatInfo', chatId] });
+      await queryClient.cancelQueries({ queryKey: ['pendingSuggestions', chatId] });
 
-      const previousChatInfo = queryClient.getQueryData(['chatInfo', chatId]);
+      const previousSuggestions = queryClient.getQueryData<Suggestion[]>(['pendingSuggestions', chatId]);
 
-      queryClient.setQueryData(['chatInfo', chatId], (old: any) => {
-        const updatedSuggestions = old.suggestions.filter((s: any) => !suggestionIds.includes(s.id));
-        return { ...old, suggestions: updatedSuggestions };
-      });
+      queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', chatId], (old = []) =>
+        old.filter((suggestion) => !suggestionIds.includes(suggestion.id))
+      );
 
-      return { previousChatInfo };
+      return { previousSuggestions };
     },
     onError: (_, { chatId }, context) => {
-      queryClient.setQueryData(['chatInfo', chatId], context?.previousChatInfo);
+      queryClient.setQueryData(['pendingSuggestions', chatId], context?.previousSuggestions);
     },
     onSettled: (_, __, { chatId }) => {
-      queryClient.invalidateQueries({ queryKey: ['chatInfo', chatId] });
+      queryClient.invalidateQueries({ queryKey: ['pendingSuggestions', chatId] });
     },
   });
 };

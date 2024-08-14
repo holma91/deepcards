@@ -1,9 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import '../styles/markdown.css';
 import { useGenerateFlashcards } from '../hooks/mutations/useGenerateFlashcards';
 import { useDeleteSuggestions } from '../hooks/mutations/useDeleteSuggestions';
-import { TimelineItem, Suggestion } from '../types';
+import { usePendingSuggestions } from '../hooks/usePendingSuggestions';
+import { TimelineItem } from '../types';
 import TimelineSuggestionCard from './TimelineSuggestionCard';
 import PendingSuggestionCard from './PendingSuggestionCard';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -27,11 +28,10 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   isAiResponding,
   flashcardContent,
 }) => {
-  const [pendingSuggestions, setPendingSuggestions] = useState<Suggestion[]>([]);
-  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const { data: pendingSuggestions = [] } = usePendingSuggestions(chatId || '');
   const generateFlashcardsMutation = useGenerateFlashcards();
   const deleteSuggestionsMutation = useDeleteSuggestions();
 
@@ -45,28 +45,21 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     }
   }, [inputValue]);
 
-  useEffect(() => {
-    const newPendingSuggestions = timeline
-      .filter((item) => item.type === 'suggestion' && item.status === 'pending')
-      .map((item) => item as Suggestion)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    setPendingSuggestions(newPendingSuggestions);
-    setCurrentSuggestionIndex(0);
-  }, [timeline]);
-
-  const handleGenerateFlashcards = async () => {
+  const handleGenerateFlashcards = () => {
     if (!chatId) {
       console.error('No chat ID available');
       return;
     }
 
-    try {
-      const result = await generateFlashcardsMutation.mutateAsync({ chatId });
-      setPendingSuggestions(result.suggestions);
-      setCurrentSuggestionIndex(0);
-    } catch (error) {
-      console.error('Error generating flashcards:', error);
-    }
+    generateFlashcardsMutation.mutate(
+      { chatId },
+      {
+        onError: (error) => {
+          console.error('Error generating flashcards:', error);
+          // You might want to show an error message to the user here
+        },
+      }
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,10 +88,6 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
         chatId,
       },
       {
-        onSuccess: () => {
-          setPendingSuggestions([]);
-          setCurrentSuggestionIndex(0);
-        },
         onError: (error) => {
           console.error('Failed to delete suggestions:', error);
         },
@@ -156,7 +145,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                     <span
                       key={index}
                       className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mx-0.5 sm:mx-1 ${
-                        index === currentSuggestionIndex ? 'bg-gray-900' : 'bg-gray-300'
+                        index === 0 ? 'bg-gray-900' : 'bg-gray-300'
                       }`}
                     />
                   ))}
@@ -170,15 +159,11 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
               </div>
             </div>
             <PendingSuggestionCard
-              suggestion={pendingSuggestions[currentSuggestionIndex]}
+              key={pendingSuggestions[0].id}
+              suggestion={pendingSuggestions[0]}
               chatId={chatId || ''}
               onNextSuggestion={() => {
-                if (currentSuggestionIndex < pendingSuggestions.length - 1) {
-                  setCurrentSuggestionIndex(currentSuggestionIndex + 1);
-                } else {
-                  setPendingSuggestions([]);
-                  setCurrentSuggestionIndex(0);
-                }
+                // This will be handled by the mutation in PendingSuggestionCard
               }}
             />
           </div>

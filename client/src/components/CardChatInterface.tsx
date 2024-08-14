@@ -77,7 +77,7 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
   };
 
   const flashcardContent = (
-    <div className="max-w-full sm:max-w-3xl mx-auto space-y-2 sm:space-y-4 px-2 sm:px-0">
+    <div className="max-w-full mx-auto space-y-2 sm:space-y-4 px-2 sm:px-0  sm:max-w-3xl sm:min-w-[32rem]">
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="flex justify-between items-center p-2 sm:p-4 border-b border-gray-200">
           <button

@@ -8,7 +8,7 @@ interface AcceptSuggestionParams {
   suggestionId: string;
   deckId: string;
   deckName: string;
-  chatId: string; // for invalidating the chat info query
+  chatId: string;
 }
 
 interface AcceptSuggestionResponse {
@@ -51,11 +51,16 @@ export const useAcceptSuggestion = () => {
     onMutate: async (variables) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['chatInfo', variables.chatId] });
+      await queryClient.cancelQueries({ queryKey: ['pendingSuggestions', variables.chatId] });
 
-      // Snapshot the previous value
+      // Snapshot the previous values
       const previousChatInfo = queryClient.getQueryData(['chatInfo', variables.chatId]);
+      const previousPendingSuggestions = queryClient.getQueryData<Suggestion[]>([
+        'pendingSuggestions',
+        variables.chatId,
+      ]);
 
-      // Optimistically update to the new value
+      // Optimistically update chatInfo
       queryClient.setQueryData(['chatInfo', variables.chatId], (old: any) => {
         const updatedSuggestions = old.suggestions.map((s: Suggestion) =>
           s.id === variables.suggestionId ? { ...s, status: 'accepted' } : s
@@ -63,17 +68,26 @@ export const useAcceptSuggestion = () => {
         return { ...old, suggestions: updatedSuggestions };
       });
 
-      // Return a context object with the snapshotted value
-      return { previousChatInfo };
+      // Optimistically update pendingSuggestions
+      queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', variables.chatId], (old = []) => {
+        return old.filter((suggestion) => suggestion.id !== variables.suggestionId);
+      });
+
+      // Return a context object with the snapshotted values
+      return { previousChatInfo, previousPendingSuggestions };
     },
     onError: (_, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(['chatInfo', variables.chatId], context?.previousChatInfo);
+      queryClient.setQueryData(['pendingSuggestions', variables.chatId], context?.previousPendingSuggestions);
     },
     onSettled: (_, __, variables) => {
       // Always refetch after error or success:
       queryClient.invalidateQueries({ queryKey: ['chatInfo', variables.chatId] });
+      queryClient.invalidateQueries({ queryKey: ['pendingSuggestions', variables.chatId] });
       queryClient.invalidateQueries({ queryKey: ['decks'] });
+      queryClient.invalidateQueries({ queryKey: ['cards', variables.deckId] });
+      queryClient.invalidateQueries({ queryKey: ['decks', 'dueCounts'] });
     },
   });
 };

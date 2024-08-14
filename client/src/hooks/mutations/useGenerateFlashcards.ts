@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { Suggestion } from '../../types'; // Adjust the import path as needed
+import { Suggestion } from '../../types';
 
 interface GenerateFlashcardsParams {
   chatId: string;
@@ -37,9 +37,42 @@ export const useGenerateFlashcards = () => {
 
   return useMutation({
     mutationFn: generateFlashcards,
-    onSuccess: (_, variables) => {
-      // Invalidate and refetch chatInfo query
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['pendingSuggestions', variables.chatId] });
+      await queryClient.cancelQueries({ queryKey: ['chatInfo', variables.chatId] });
+
+      // Snapshot the previous values
+      const previousPendingSuggestions = queryClient.getQueryData<Suggestion[]>([
+        'pendingSuggestions',
+        variables.chatId,
+      ]);
+      const previousChatInfo = queryClient.getQueryData(['chatInfo', variables.chatId]);
+
+      // Optimistically update to show that suggestions are being generated
+      queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', variables.chatId], []);
+      queryClient.setQueryData(['chatInfo', variables.chatId], (old: any) => ({
+        ...old,
+        isGeneratingSuggestions: true,
+      }));
+
+      // Return a context with the snapshotted values
+      return { previousPendingSuggestions, previousChatInfo };
+    },
+    onError: (_, variables, context) => {
+      // If the mutation fails, use the context to roll back
+      queryClient.setQueryData(['pendingSuggestions', variables.chatId], context?.previousPendingSuggestions);
+      queryClient.setQueryData(['chatInfo', variables.chatId], context?.previousChatInfo);
+    },
+    onSettled: (data, _, variables) => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['pendingSuggestions', variables.chatId] });
       queryClient.invalidateQueries({ queryKey: ['chatInfo', variables.chatId] });
+
+      // If successful, update the pendingSuggestions query with the new suggestions
+      if (data) {
+        queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', variables.chatId], data.suggestions);
+      }
     },
   });
 };

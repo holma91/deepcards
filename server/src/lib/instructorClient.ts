@@ -1,5 +1,3 @@
-// server/src/instructorClient.ts
-
 import Instructor from '@instructor-ai/instructor';
 import openai from './openaiClient';
 
