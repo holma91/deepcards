@@ -13,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@instructor-ai/instructor": "^1.5.0",
-    "@supabase/supabase-js": "^2.44.4",
+    "@supabase/supabase-js": "^2.45.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -28,7 +28,7 @@
     "@types/dotenv": "^8.2.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.12",
-    "supabase": "^1.187.10",
+    "supabase": "^1.190.0",
     "typescript": "^5.5.4"
   }
 }

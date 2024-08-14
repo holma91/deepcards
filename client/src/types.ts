@@ -1,4 +1,4 @@
-import { Database } from './supabase/database.types';
+import { Database } from './database.types';
 
 export type Chat = Database['public']['Tables']['chats']['Row'];
 export type Card = Database['public']['Tables']['cards']['Row'];

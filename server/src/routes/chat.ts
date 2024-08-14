@@ -4,7 +4,7 @@ import openai from '../lib/openaiClient';
 import { supabase } from '../lib/supabaseClient';
 import { z } from 'zod';
 import instructor from '../lib/instructorClient';
-import { Database } from '../types/supabase/database.types';
+import { Database } from '../database.types';
 
 type Chat = Database['public']['Tables']['chats']['Row'];
 type Card = Database['public']['Tables']['cards']['Row'];
