@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import BaseChatInterface from '../components/BaseChatInterface';
 import { useChatInfo } from '../hooks/useChatInfo';
@@ -8,34 +8,16 @@ import { createTimeline } from '../utils/utils';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { useCard } from '../hooks/useCard';
 
-const topics = [
-  'The history and evolution of golf clubs',
-  "The impact of code-breaking on World War II's outcome",
-  'Understanding quantum entanglement in physics',
-  'The pros and cons of universal basic income',
-  'The ethical implications of AI in healthcare',
-  'Innovative technologies for carbon capture',
-  // 'The potential for human colonization of Mars',
-  // 'The science behind intermittent fasting',
-  // 'The influence of Shakespeare on modern storytelling',
-  // 'The changes in goals per game in the NHL over the years',
-];
-
 const Chat: React.FC = () => {
   const { chatId } = useParams<{ chatId?: string }>();
   const [searchParams] = useSearchParams();
   const cardId = searchParams.get('card_id');
   const navigate = useNavigate();
-  // const [inputValue, setInputValue] = useState('');
 
   const chatInfo = useChatInfo(chatId);
   const cardInfo = useCard(cardId || undefined);
   const existingChatMutation = useExistingChat();
   const createChatMutation = useCreateChat();
-
-  // const handleTopicClick = (topic: string) => {
-  //   setInputValue(`Tell me about: ${topic}`);
-  // };
 
   const handleSendMessage = async (message: string) => {
     try {
@@ -118,23 +100,6 @@ const FlashcardContent: React.FC<{ card: any }> = ({ card }) => (
         <MarkdownRenderer content={card?.back || ''} className="text-left" />
       </div>
     </div>
-  </div>
-);
-
-const TopicSuggestions: React.FC<{ topics: string[]; onTopicClick: (topic: string) => void }> = ({
-  topics,
-  onTopicClick,
-}) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
-    {topics.map((topic, index) => (
-      <button
-        key={index}
-        onClick={() => onTopicClick(topic)}
-        className="p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left text-xs sm:text-sm"
-      >
-        {topic}
-      </button>
-    ))}
   </div>
 );
 

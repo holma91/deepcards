@@ -13,7 +13,7 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
   return (
-    <div className={`markdown-content max-w-full overflow-x-auto ${className || ''}`}>
+    <div className={`markdown-content ${className || ''}`}>
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
@@ -21,7 +21,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <div className=" max-w-[65vw]">
+              <div className=" max-w-[60vw] md:max-w-full overflow-x-auto">
                 <SyntaxHighlighter
                   style={dracula}
                   language={match[1]}

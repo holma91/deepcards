@@ -98,6 +98,10 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     );
   };
 
+  const handleTopicClick = (topic: string) => {
+    setInputValue(`Tell me about: ${topic}`);
+  };
+
   const isGeneratingFlashcards = generateFlashcardsMutation.isPending;
 
   const renderTimelineItem = (item: TimelineItem, index: number, isLast: boolean) => {
@@ -125,6 +129,9 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     <div className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
+          {timeline.length === 0 && !flashcardContent && (
+            <TopicSuggestions topics={topics} onTopicClick={handleTopicClick} />
+          )}
           {flashcardContent}
           {timeline.map((item, index) => renderTimelineItem(item, index, index === timeline.length - 1))}
           {isAiResponding && (
@@ -214,5 +221,35 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     </div>
   );
 };
+
+const topics = [
+  'The history and evolution of golf clubs',
+  "The impact of code-breaking on World War II's outcome",
+  'Understanding quantum entanglement in physics',
+  'The pros and cons of universal basic income',
+  'The ethical implications of AI in healthcare',
+  'Innovative technologies for carbon capture',
+  // 'The potential for human colonization of Mars',
+  // 'The science behind intermittent fasting',
+  // 'The influence of Shakespeare on modern storytelling',
+  // 'The changes in goals per game in the NHL over the years',
+];
+
+const TopicSuggestions: React.FC<{ topics: string[]; onTopicClick: (topic: string) => void }> = ({
+  topics,
+  onTopicClick,
+}) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
+    {topics.map((topic, index) => (
+      <button
+        key={index}
+        onClick={() => onTopicClick(topic)}
+        className="p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left text-xs sm:text-sm"
+      >
+        {topic}
+      </button>
+    ))}
+  </div>
+);
 
 export default BaseChatInterface;
