@@ -51,7 +51,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           <p>Loading settings...</p>
         ) : (
           <div className="space-y-4">
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Theme</label>
               <select
                 value={profile?.theme || 'system'}
@@ -62,19 +62,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <option value="dark">Dark</option>
                 <option value="system">System</option>
               </select>
-            </div>
+            </div> */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Review Algorithm</label>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Review Algorithm</label>
               <select
                 value={profile?.review_algorithm || 'basic'}
                 onChange={(e) => handleSettingChange('review_algorithm', e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
               >
                 <option value="basic">Basic</option>
-                <option value="supermemo">SuperMemo</option>
+                <option value="advanced">Advanced</option>
               </select>
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Default Chat Model</label>
               <select
                 value={profile?.default_chat_model || 'gpt-3.5-turbo'}
@@ -84,7 +84,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 <option value="gpt-4">GPT-4</option>
               </select>
-            </div>
+            </div> */}
           </div>
         )}
         <div className="flex justify-end space-x-3 mt-6">

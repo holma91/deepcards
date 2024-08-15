@@ -15,10 +15,10 @@ const topics = [
   'The pros and cons of universal basic income',
   'The ethical implications of AI in healthcare',
   'Innovative technologies for carbon capture',
-  'The potential for human colonization of Mars',
-  'The science behind intermittent fasting',
-  'The influence of Shakespeare on modern storytelling',
-  'The changes in goals per game in the NHL over the years',
+  // 'The potential for human colonization of Mars',
+  // 'The science behind intermittent fasting',
+  // 'The influence of Shakespeare on modern storytelling',
+  // 'The changes in goals per game in the NHL over the years',
 ];
 
 const Chat: React.FC = () => {
@@ -26,16 +26,16 @@ const Chat: React.FC = () => {
   const [searchParams] = useSearchParams();
   const cardId = searchParams.get('card_id');
   const navigate = useNavigate();
-  const [inputValue, setInputValue] = useState('');
+  // const [inputValue, setInputValue] = useState('');
 
   const chatInfo = useChatInfo(chatId);
   const cardInfo = useCard(cardId || undefined);
   const existingChatMutation = useExistingChat();
   const createChatMutation = useCreateChat();
 
-  const handleTopicClick = (topic: string) => {
-    setInputValue(`Tell me about: ${topic}`);
-  };
+  // const handleTopicClick = (topic: string) => {
+  //   setInputValue(`Tell me about: ${topic}`);
+  // };
 
   const handleSendMessage = async (message: string) => {
     try {
@@ -73,16 +73,16 @@ const Chat: React.FC = () => {
     <div className="flex flex-col h-full w-full max-w-3xl mx-auto pt-4 px-2 sm:px-4">
       {sendError && <ErrorMessage message="Failed to send message. Please try again." />}
 
-      {timeline.length === 0 && !createChatMutation.isPending && !cardId && (
+      {/* {timeline.length === 0 && !createChatMutation.isPending && !cardId && (
         <TopicSuggestions topics={topics} onTopicClick={handleTopicClick} />
-      )}
+      )} */}
 
       <BaseChatInterface
         chatId={chatId}
         timeline={timeline}
         onSendMessage={handleSendMessage}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
+        // inputValue={inputValue}
+        // setInputValue={setInputValue}
         isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
         flashcardContent={flashcardContent}
       />

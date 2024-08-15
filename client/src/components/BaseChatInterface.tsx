@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import '../styles/markdown.css';
 import { useGenerateFlashcards } from '../hooks/mutations/useGenerateFlashcards';
@@ -13,22 +13,25 @@ interface BaseChatInterfaceProps {
   chatId?: string;
   timeline: TimelineItem[];
   onSendMessage: (message: string) => void;
-  inputValue: string;
-  setInputValue: (value: string) => void;
   isAiResponding: boolean;
   flashcardContent?: React.ReactNode;
 }
+
+const isMobileDevice = () => {
+  return /Mobi|Android/i.test(navigator.userAgent);
+};
 
 const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   chatId,
   timeline,
   onSendMessage,
-  inputValue,
-  setInputValue,
   isAiResponding,
   flashcardContent,
 }) => {
+  const [inputValue, setInputValue] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: pendingSuggestions = [] } = usePendingSuggestions(chatId || '');
@@ -36,11 +39,11 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   const deleteSuggestionsMutation = useDeleteSuggestions();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [timeline]);
+    lastMessageRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [timeline.length]);
 
   useEffect(() => {
-    if (inputRef.current) {
+    if (!isMobileDevice() && inputRef.current) {
       inputRef.current.focus();
     }
   }, [inputValue]);
@@ -97,11 +100,12 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
 
   const isGeneratingFlashcards = generateFlashcardsMutation.isPending;
 
-  const renderTimelineItem = (item: TimelineItem, index: number) => {
+  const renderTimelineItem = (item: TimelineItem, index: number, isLast: boolean) => {
     if (item.type === 'message') {
       return (
         <div key={index} className={`mb-4 ${item.role === 'user' ? 'text-right' : 'text-left'}`}>
-          <div>
+          {/* <div ref={lastMessageRef}> */}
+          <div ref={isLast ? lastMessageRef : undefined}>
             <MarkdownRenderer
               content={item.content}
               className={`inline-block max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg text-left text-sm sm:text-base ${
@@ -122,7 +126,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
       <div className="flex-grow overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
           {flashcardContent}
-          {timeline.map(renderTimelineItem)}
+          {timeline.map((item, index) => renderTimelineItem(item, index, index === timeline.length - 1))}
           {isAiResponding && (
             <div className="flex justify-start mb-4">
               <div className="bg-gray-100 rounded-lg p-2 sm:p-3">
@@ -175,7 +179,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 focus:outline-none resize-none text-sm sm:text-base"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 focus:outline-none resize-none text-base"
                 placeholder="Type your message..."
                 minRows={1}
                 maxRows={5}

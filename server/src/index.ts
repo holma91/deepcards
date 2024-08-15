@@ -10,14 +10,9 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 
-// Ensure required environment variables are set
-const port = process.env.PORT || 8080;
+const port = parseInt(process.env.PORT || '8080', 10);
+const host = process.env.HOST || '0.0.0.0';
 const frontendUrl = process.env.FRONTEND_URL;
-
-if (!port) {
-  console.error('PORT environment variable is not set');
-  process.exit(1);
-}
 
 if (!frontendUrl) {
   console.error('FRONTEND_URL environment variable is not set');
@@ -54,6 +49,6 @@ app.use('/api/chat', chatRouter);
 app.use('/api/chats', chatsRouter);
 app.use('/api/suggestions', suggestionsRouter);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.listen(port, host, () => {
+  console.log(`Server is running on http://${host}:${port}`);
 });

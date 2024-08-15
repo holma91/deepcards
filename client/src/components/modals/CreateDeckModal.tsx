@@ -81,7 +81,7 @@ const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ isOpen, onClose }) =>
           onChange={(e) => setNewDeckName(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Enter deck name"
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 mb-4 transition-colors"
+          className="w-full px-3 py-2 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 mb-4 transition-colors"
         />
         <div className="flex justify-end space-x-3">
           <button

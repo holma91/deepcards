@@ -313,6 +313,10 @@ interface ChatItemProps {
   setDeletingChat: (chat: { id: string; title: string } | null) => void;
 }
 
+const isMobileDevice = () => {
+  return /Mobi|Android/i.test(navigator.userAgent);
+};
+
 const ChatItem: React.FC<ChatItemProps> = ({
   chat,
   isActive,
@@ -324,6 +328,7 @@ const ChatItem: React.FC<ChatItemProps> = ({
   setDeletingChat,
 }) => {
   const editInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (editingChatId === chat.id && editInputRef.current) {
@@ -331,66 +336,82 @@ const ChatItem: React.FC<ChatItemProps> = ({
     }
   }, [editingChatId, chat.id]);
 
+  const handleChatClick = (e: React.MouseEvent) => {
+    // Only navigate if we're not clicking on the menu
+    if (!(e.target as HTMLElement).closest('.chat-menu')) {
+      navigate(`/chat/${chat.id}`);
+    }
+  };
+
   return (
     <li className={`group ${isActive ? 'bg-gray-200' : 'hover:bg-gray-200'} rounded`}>
-      <div className="flex items-center px-3 py-2">
-        {editingChatId === chat.id ? (
-          <input
-            ref={editInputRef}
-            value={editingChatTitle}
-            onChange={(e) => setEditingChatTitle(e.target.value)}
-            onBlur={() => handleRenameChat(chat.id, editingChatTitle)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleRenameChat(chat.id, editingChatTitle);
-              }
-            }}
-            className="flex-grow bg-white px-2 py-1 rounded"
-          />
-        ) : (
-          <Link to={`/chat/${chat.id}`} className="flex-grow truncate">
-            <span className={isActive ? 'font-medium' : ''}>{chat.title}</span>
-          </Link>
-        )}
-        <Menu as="div" className="relative inline-block text-left">
-          <MenuButton className="p-1 rounded-full hover:bg-gray-300 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-            </svg>
-          </MenuButton>
-          <MenuItems className="absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-            <div className="px-1 py-1">
-              <MenuItem>
-                {({ active }) => (
-                  <button
-                    className={`${
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                    } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                    onClick={() => {
-                      setEditingChatId(chat.id);
-                      setEditingChatTitle(chat.title);
-                    }}
-                  >
-                    Rename
-                  </button>
-                )}
-              </MenuItem>
-              <MenuItem>
-                {({ active }) => (
-                  <button
-                    className={`${
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                    } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
-                    onClick={() => setDeletingChat({ id: chat.id, title: chat.title })}
-                  >
-                    Delete
-                  </button>
-                )}
-              </MenuItem>
-            </div>
-          </MenuItems>
-        </Menu>
-      </div>
+      {editingChatId === chat.id ? (
+        <input
+          ref={editInputRef}
+          value={editingChatTitle}
+          onChange={(e) => setEditingChatTitle(e.target.value)}
+          onBlur={() => handleRenameChat(chat.id, editingChatTitle)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleRenameChat(chat.id, editingChatTitle);
+            }
+          }}
+          className="w-full bg-white px-3 py-2 rounded"
+        />
+      ) : (
+        <div
+          onClick={handleChatClick}
+          className={`flex items-center justify-between w-full px-3 py-2 rounded transition-colors duration-200 cursor-pointer ${
+            isActive ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+          }`}
+        >
+          <span className="truncate flex-grow mr-2">{chat.title}</span>
+          {!isMobileDevice() ? (
+            <Menu as="div" className="relative inline-block text-left chat-menu">
+              <MenuButton className="p-1 rounded-full hover:bg-gray-300 focus:outline-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+              </MenuButton>
+              <MenuItems className="absolute right-0 w-56 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                <div className="px-1 py-1">
+                  <MenuItem>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingChatId(chat.id);
+                          setEditingChatTitle(chat.title);
+                        }}
+                      >
+                        Rename
+                      </button>
+                    )}
+                  </MenuItem>
+                  <MenuItem>
+                    {({ active }) => (
+                      <button
+                        className={`${
+                          active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } group flex rounded-md items-center w-full px-2 py-2 text-sm`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingChat({ id: chat.id, title: chat.title });
+                        }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </MenuItem>
+                </div>
+              </MenuItems>
+            </Menu>
+          ) : null}
+        </div>
+      )}
     </li>
   );
 };

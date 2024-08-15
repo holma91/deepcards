@@ -17,7 +17,7 @@ interface CardChatInterfaceProps {
 
 const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
   const [chatId, setChatId] = useState<string | undefined>(card.chat_id || undefined);
-  const [inputValue, setInputValue] = useState('');
+  // const [inputValue, setInputValue] = useState('');
 
   const chatInfo = useChatInfo(chatId);
   const existingChatMutation = useExistingChat();
@@ -122,21 +122,23 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
     <div className="flex flex-col h-full w-full max-w-full sm:max-w-3xl mx-auto px-2 sm:px-0">
       {sendError && (
         <div
-          className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded relative mb-2 sm:mb-4 text-sm sm:text-base"
+          className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded relative mb-2 sm:mb-4 text-base"
           role="alert"
         >
           <span className="block sm:inline">Failed to send message. Please try again.</span>
         </div>
       )}
-      <BaseChatInterface
-        chatId={card.chat_id || undefined}
-        timeline={timeline}
-        onSendMessage={handleSendMessage}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
-        flashcardContent={flashcardContent}
-      />
+      <div className="flex-grow overflow-auto">
+        <BaseChatInterface
+          chatId={card.chat_id || undefined}
+          timeline={timeline}
+          onSendMessage={handleSendMessage}
+          // inputValue={inputValue}
+          // setInputValue={setInputValue}
+          isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
+          flashcardContent={flashcardContent}
+        />
+      </div>
     </div>
   );
 };

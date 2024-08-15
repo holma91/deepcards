@@ -33,8 +33,10 @@ const Review: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-104px)] flex items-center justify-center px-2 sm:px-6">
-      <div className="w-full max-w-3xl flex-grow flex items-center justify-center px-2 sm:p-6">{renderContent()}</div>
+    <div className="h-full flex items-center justify-center px-2 sm:px-6">
+      <div className="h-full w-full max-w-3xl flex-grow flex items-center justify-center px-2 sm:p-6">
+        {renderContent()}
+      </div>
     </div>
   );
 };

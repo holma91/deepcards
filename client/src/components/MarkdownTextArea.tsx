@@ -18,7 +18,7 @@ const MarkdownTextarea = forwardRef<HTMLTextAreaElement, MarkdownTextareaProps>(
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className={`w-full p-3 font-mono text-sm resize-none border border-gray-200 rounded-md 
+        className={`w-full p-3 font-mono text-base resize-none border border-gray-200 rounded-md 
                     focus:ring-2 focus:ring-gray-500 focus:border-transparent 
                     placeholder-gray-400 transition-all duration-200 ease-in-out
                     ${className}`}

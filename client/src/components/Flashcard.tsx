@@ -357,7 +357,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
   );
 
   return (
-    <div className="h-[calc(100vh-104px)] flex flex-col">
+    <div className="h-full flex flex-col">
       {showChat ? (
         <CardChatInterface card={card} isRevealed={isRevealed} onClose={() => setShowChat(false)} />
       ) : (

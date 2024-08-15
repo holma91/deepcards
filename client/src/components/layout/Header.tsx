@@ -134,7 +134,7 @@ const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar, isS
   );
 
   return (
-    <header className="bg-white z-10 h-16  sticky top-0">
+    <header className="bg-white z-10 h-16 sticky top-0">
       {session ? renderLoggedInHeader() : renderLoggedOutHeader()}
     </header>
   );

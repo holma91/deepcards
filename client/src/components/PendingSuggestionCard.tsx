@@ -183,7 +183,7 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
                       value={newDeckName}
                       onChange={(e) => setNewDeckName(e.target.value)}
                       placeholder="Enter new deck name"
-                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 text-sm sm:text-base"
+                      className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 text-base"
                     />
                     <button
                       onClick={handleCancelNewDeck}

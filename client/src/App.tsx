@@ -67,7 +67,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className={`flex h-screen bg-white`}>
+    <div className="flex h-dvh bg-white">
       {session && !isAuthPage && <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />}
       <div className={`flex flex-col flex-1 ${!isSidebarCollapsed && session && !isAuthPage ? 'lg:ml-72' : ''}`}>
         {!isAuthPage && (
@@ -78,36 +78,38 @@ const AppContent: React.FC = () => {
             onOpenSettings={() => setIsSettingsModalOpen(true)}
           />
         )}
-        <main className={`flex-1 overflow-auto ${isAuthPage ? 'p-0' : 'p-4'}`}>
-          <Routes>
-            <Route path="/" element={session ? <Navigate to="/chat" replace /> : <PublicHome />} />
-            <Route path="/signup" element={session ? <Navigate to="/chat" replace /> : <SignupPage />} />
-            <Route path="/signin" element={session ? <Navigate to="/chat" replace /> : <SignInPage />} />
-            <Route
-              path="/chat"
-              element={session ? <Chat /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-            <Route
-              path="/chat/:chatId"
-              element={session ? <Chat /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-            <Route
-              path="/review"
-              element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-            <Route
-              path="/review/:deckId"
-              element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-            <Route
-              path="/cards"
-              element={session ? <CardsByDeck /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-            <Route
-              path="/cards/:deckId"
-              element={session ? <CardsByDeck /> : <Navigate to="/signin" state={{ from: location }} replace />}
-            />
-          </Routes>
+        <main className="flex-1 overflow-auto">
+          <div className={`h-full ${isAuthPage ? '' : 'p-4'}`}>
+            <Routes>
+              <Route path="/" element={session ? <Navigate to="/chat" replace /> : <PublicHome />} />
+              <Route path="/signup" element={session ? <Navigate to="/chat" replace /> : <SignupPage />} />
+              <Route path="/signin" element={session ? <Navigate to="/chat" replace /> : <SignInPage />} />
+              <Route
+                path="/chat"
+                element={session ? <Chat /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+              <Route
+                path="/chat/:chatId"
+                element={session ? <Chat /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+              <Route
+                path="/review"
+                element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+              <Route
+                path="/review/:deckId"
+                element={session ? <Review /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+              <Route
+                path="/cards"
+                element={session ? <CardsByDeck /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+              <Route
+                path="/cards/:deckId"
+                element={session ? <CardsByDeck /> : <Navigate to="/signin" state={{ from: location }} replace />}
+              />
+            </Routes>
+          </div>
         </main>
       </div>
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
