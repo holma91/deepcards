@@ -48,3 +48,19 @@
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
+
+.markdown-content table {
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: #f2f2f2;
+}

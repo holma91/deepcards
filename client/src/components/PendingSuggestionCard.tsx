@@ -11,10 +11,9 @@ import { v4 as uuidv4 } from 'uuid';
 interface PendingSuggestionCardProps {
   suggestion: Suggestion;
   chatId: string;
-  onNextSuggestion: () => void;
 }
 
-const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestion, chatId, onNextSuggestion }) => {
+const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestion, chatId }) => {
   const [selectedDeckId, setSelectedDeckId] = useState<string>('');
   const [newDeckName, setNewDeckName] = useState<string>('');
   const [isCreatingNewDeck, setIsCreatingNewDeck] = useState<boolean>(false);
@@ -58,7 +57,6 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
             setIsCreatingNewDeck(false);
             setNewDeckName('');
             setSelectedDeckId(newDeckId);
-            onNextSuggestion();
           },
         }
       );
@@ -72,7 +70,6 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
         deckName: selectedDeck.name,
         chatId: chatId,
       });
-      onNextSuggestion();
     }
   };
 
@@ -82,7 +79,6 @@ const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestio
       status: 'rejected',
       chatId: chatId,
     });
-    onNextSuggestion();
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

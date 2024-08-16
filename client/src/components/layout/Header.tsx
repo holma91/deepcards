@@ -120,7 +120,7 @@ const Header: React.FC<HeaderProps> = ({ showSidebarToggle, onToggleSidebar, isS
             onClick={() => navigate('/signin')}
             className="px-4 py-2 rounded transition-colors bg-white text-black border border-gray-300 hover:bg-gray-100"
           >
-            Log in
+            Sign in
           </button>
           <button
             onClick={() => navigate('/signup')}

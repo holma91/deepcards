@@ -330,7 +330,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_ordered_chats: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          id: string
+          user_id: string
+          title: string
+          created_at: string
+          updated_at: string
+          card_id: string
+        }[]
+      }
     }
     Enums: {
       card_status: "learning" | "reviewing" | "relearning"

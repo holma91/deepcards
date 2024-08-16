@@ -31,7 +31,7 @@ function App() {
 
 const AppContent: React.FC = () => {
   const { session, loading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading } = useProfileContext();
+  const { profile } = useProfileContext();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const location = useLocation();
@@ -62,7 +62,7 @@ const AppContent: React.FC = () => {
     }
   }, [profile]);
 
-  if (authLoading || profileLoading) {
+  if (authLoading) {
     return <LoadingScreen />;
   }
 

@@ -1,6 +1,6 @@
 const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
-    return 'https://deepcards-server-jji5s4leka-uk.a.run.app/api';
+    return 'https://api.deepcards.ai/api';
   }
 
   // For development

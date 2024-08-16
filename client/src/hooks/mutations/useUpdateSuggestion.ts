@@ -50,17 +50,21 @@ export const useUpdateSuggestion = () => {
       const previousSuggestions = queryClient.getQueryData<Suggestion[]>(['pendingSuggestions', chatId]);
 
       queryClient.setQueryData<Suggestion[]>(['pendingSuggestions', chatId], (old = []) => {
-        return old.map((suggestion) => {
-          if (suggestion.id === suggestionId) {
-            return {
-              ...suggestion,
-              status: status ?? suggestion.status,
-              modified_front: modified_front ?? suggestion.modified_front,
-              modified_back: modified_back ?? suggestion.modified_back,
-            };
-          }
-          return suggestion;
-        });
+        if (status === 'rejected') {
+          return old.filter((suggestion) => suggestion.id !== suggestionId);
+        } else {
+          return old.map((suggestion) => {
+            if (suggestion.id === suggestionId) {
+              return {
+                ...suggestion,
+                status: status ?? suggestion.status,
+                modified_front: modified_front ?? suggestion.modified_front,
+                modified_back: modified_back ?? suggestion.modified_back,
+              };
+            }
+            return suggestion;
+          });
+        }
       });
 
       return { previousSuggestions };

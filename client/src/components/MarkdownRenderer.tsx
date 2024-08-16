@@ -4,6 +4,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
 import '../styles/katex.css';
 
 interface MarkdownRendererProps {
@@ -15,7 +16,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
   return (
     <div className={`markdown-content ${className || ''}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkMath, remarkGfm]} // Add remarkGfm here
         rehypePlugins={[rehypeKatex]}
         components={{
           code({ node, inline, className, children, ...props }: any) {

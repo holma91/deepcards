@@ -8,6 +8,7 @@ import { TimelineItem } from '../types';
 import TimelineSuggestionCard from './TimelineSuggestionCard';
 import PendingSuggestionCard from './PendingSuggestionCard';
 import MarkdownRenderer from './MarkdownRenderer';
+import TopicSuggestions from './TopicSuggestions';
 
 interface BaseChatInterfaceProps {
   chatId?: string;
@@ -29,6 +30,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   flashcardContent,
 }) => {
   const [inputValue, setInputValue] = useState('');
+  const [lastSentMessage, setLastSentMessage] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,6 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
       {
         onError: (error) => {
           console.error('Error generating flashcards:', error);
-          // You might want to show an error message to the user here
         },
       }
     );
@@ -68,6 +69,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim()) {
+      setLastSentMessage(inputValue.trim());
       onSendMessage(inputValue.trim());
       setInputValue('');
     }
@@ -129,15 +131,25 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     <div className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto">
         <div className="max-w-3xl mx-auto space-y-4">
-          {timeline.length === 0 && !flashcardContent && (
-            <TopicSuggestions topics={topics} onTopicClick={handleTopicClick} />
+          {timeline.length === 0 && !flashcardContent && !isAiResponding && (
+            <TopicSuggestions onTopicClick={handleTopicClick} />
           )}
           {flashcardContent}
           {timeline.map((item, index) => renderTimelineItem(item, index, index === timeline.length - 1))}
           {isAiResponding && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-gray-100 rounded-lg p-2 sm:p-3">
-                <div className="animate-pulse text-sm sm:text-base">Responding...</div>
+            <div className="mb-4">
+              {timeline.length === 0 && (
+                <div className="flex justify-end mb-2">
+                  <div className="bg-gray-900 text-white rounded-lg p-2 sm:p-3 max-w-[85%] sm:max-w-[80%]">
+                    <MarkdownRenderer content={lastSentMessage} className="text-sm sm:text-base text-left" />
+                  </div>
+                </div>
+              )}
+              {/* AI's "Responding..." indicator */}
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-lg p-2 sm:p-3">
+                  <div className="animate-pulse text-sm sm:text-base">Responding...</div>
+                </div>
               </div>
             </div>
           )}
@@ -145,7 +157,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
         </div>
       </div>
 
-      <div className="p-2 sm:p-4 bg-white border-t border-gray-200">
+      <div className="py-2 sm:py-4 bg-white border-t border-gray-200">
         {pendingSuggestions.length > 0 ? (
           <div className="max-w-3xl mx-auto">
             <div className="flex justify-between items-center mb-2">
@@ -173,9 +185,6 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
               key={pendingSuggestions[0].id}
               suggestion={pendingSuggestions[0]}
               chatId={chatId || ''}
-              onNextSuggestion={() => {
-                // This will be handled by the mutation in PendingSuggestionCard
-              }}
             />
           </div>
         ) : (
@@ -196,7 +205,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                 <button
                   type="submit"
                   className="p-1.5 sm:p-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                  disabled={isGeneratingFlashcards}
+                  disabled={inputValue === '' || isGeneratingFlashcards}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path
@@ -206,13 +215,15 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                     />
                   </svg>
                 </button>
-                <button
-                  onClick={handleGenerateFlashcards}
-                  disabled={isGeneratingFlashcards}
-                  className="px-2 sm:px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs sm:text-sm hover:bg-gray-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                >
-                  {isGeneratingFlashcards ? 'Generating...' : 'Generate'}
-                </button>
+                {chatId ? (
+                  <button
+                    onClick={handleGenerateFlashcards}
+                    disabled={isGeneratingFlashcards}
+                    className="px-2 sm:px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs sm:text-sm hover:bg-gray-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    {isGeneratingFlashcards ? 'Generating...' : 'Generate'}
+                  </button>
+                ) : null}
               </div>
             </div>
           </form>
@@ -221,35 +232,5 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     </div>
   );
 };
-
-const topics = [
-  'The history and evolution of golf clubs',
-  "The impact of code-breaking on World War II's outcome",
-  'Understanding quantum entanglement in physics',
-  'The pros and cons of universal basic income',
-  'The ethical implications of AI in healthcare',
-  'Innovative technologies for carbon capture',
-  // 'The potential for human colonization of Mars',
-  // 'The science behind intermittent fasting',
-  // 'The influence of Shakespeare on modern storytelling',
-  // 'The changes in goals per game in the NHL over the years',
-];
-
-const TopicSuggestions: React.FC<{ topics: string[]; onTopicClick: (topic: string) => void }> = ({
-  topics,
-  onTopicClick,
-}) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
-    {topics.map((topic, index) => (
-      <button
-        key={index}
-        onClick={() => onTopicClick(topic)}
-        className="p-2 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left text-xs sm:text-sm"
-      >
-        {topic}
-      </button>
-    ))}
-  </div>
-);
 
 export default BaseChatInterface;

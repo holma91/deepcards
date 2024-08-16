@@ -77,15 +77,22 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
     setEditedBack(card.back);
   };
 
+  const handleDeepDive = () => {
+    setLastFocusedGrade(focusedGrade);
+    setShowChat(true);
+  };
+
   useEffect(() => {
     const handleRevealedModeKeys = (event: KeyboardEvent) => {
-      switch (event.key.toLowerCase()) {
-        case 'e':
+      console.log(event.code);
+
+      switch (event.code) {
+        case 'KeyE':
           event.preventDefault();
           handleStartEdit();
           break;
-        case ' ':
-        case 'enter':
+        case 'Enter':
+        case 'Space':
           event.preventDefault();
           if (focusedGrade !== null) {
             onReview(focusedGrade);
@@ -106,8 +113,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
     const handleGlobalKeys = (event: KeyboardEvent) => {
       if (event.code === 'KeyD') {
         event.preventDefault();
-        setLastFocusedGrade(focusedGrade);
-        setShowChat(true);
+        handleDeepDive();
       }
     };
 
@@ -182,7 +188,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ card, onReview }) => {
 
     window.addEventListener('keydown', handleKeyNavigation);
     return () => window.removeEventListener('keydown', handleKeyNavigation);
-  }, [isRevealed, focusedGrade, onReview, isEditing, isBasicMode, handleStartEdit, handleCancelEdit]);
+  }, [isRevealed, focusedGrade, onReview, isEditing, isBasicMode, handleStartEdit, handleCancelEdit, handleDeepDive]);
 
   useEffect(() => {
     if (isRevealed && !showChat) {

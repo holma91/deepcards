@@ -88,10 +88,12 @@ You have access to a KaTeX render environment for displaying mathematical expres
      $$
 
 7. Limitations and Best Practices:
-   - Avoid using text-mode commands like \text{} or \textbf{} inside math delimiters
-   - Stick to basic math notation and commonly used symbols
-   - For complex layouts, use multiple math environments instead of advanced LaTeX environments
-   - If a command doesn't render correctly, try finding a math-mode alternative
+   - \\text{} is used for including text within math mode, but be aware of its limitations:
+     - Do not use math-mode syntax (like subscripts _ or superscripts ^) inside \\text{}.
+     - \\text{} creates a text-mode environment, so math operations don't work inside it.
+   - Stick to basic text content inside \\text{} and use separate math mode for mathematical notations.
+   - If a expression doesn't render correctly, try separating text and math components.
+   - For complex layouts, consider using multiple math environments or table structures.
 
 Remember to use math notation when it enhances clarity and readability. For simple expressions in explanatory text, plain language may be more appropriate.
 `;

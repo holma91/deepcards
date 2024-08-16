@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { Message, ChatResponse } from '../../types';
+import { Message, ChatResponse, Chat } from '../../types';
 
 interface ExistingChatParams {
   chatId: string;
@@ -55,6 +55,18 @@ export const useExistingChat = () => {
         };
       });
 
+      // Optimistically update chats list
+      queryClient.setQueryData<Chat[]>(['chats'], (old) => {
+        if (!old) return old;
+        const updatedChat = old.find((chat) => chat.id === newChat.chatId);
+        if (!updatedChat) return old;
+
+        return [
+          { ...updatedChat, updated_at: new Date().toISOString() },
+          ...old.filter((chat) => chat.id !== newChat.chatId),
+        ];
+      });
+
       return { previousChatInfo };
     },
     onError: (_, newChat, context) => {
@@ -74,6 +86,7 @@ export const useExistingChat = () => {
     },
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['chatInfo', variables.chatId] });
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
     },
   });
 };

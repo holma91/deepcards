@@ -11,15 +11,15 @@ router.get('', authenticateUser, async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('chats')
-      .select('*')
-      .eq('user_id', req.user.id)
-      .order('created_at', { ascending: false });
+    const { data: chats, error } = await supabase.rpc('get_ordered_chats', {
+      p_user_id: req.user.id,
+    });
 
     if (error) throw error;
-    res.json(data);
+
+    res.json(chats);
   } catch (error) {
+    console.error('Error fetching chats:', error);
     res.status(500).json({ error: 'Failed to fetch chats' });
   }
 });
