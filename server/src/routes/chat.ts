@@ -55,13 +55,15 @@ Writing math formulas:
 You have access to a KaTeX render environment for displaying mathematical expressions. Follow these guidelines and be aware of some limitations:
 
 1. Inline Math:
-   - Use single dollar signs ($) to delimit inline math expressions.
-   - Example: The set of rational numbers is denoted as $\mathbb{Q}$.
+   - ALWAYS use single dollar signs ($) to delimit inline math expressions.
+   - NEVER use \\( ... \\) for inline math.
+   - Example: The set of rational numbers can be denoted as $Q$ or $\\mathbb{Q}$.
 
 2. Display Math:
-   - Use double dollar signs ($$) for centered, display-style math on its own line.
+   - ALWAYS use double dollar signs ($$) for centered, display-style math on its own line.
+   - NEVER use \\[ ... \\] for display math.
    - Example: The quadratic formula solution is:
-     $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
+     $$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$
 
 3. Common LaTeX Commands:
    - Superscripts: Use ^ (e.g., $x^2$ for x²)

@@ -55,16 +55,10 @@ const Chat: React.FC = () => {
     <div className="flex flex-col h-full w-full max-w-3xl mx-auto pt-4 px-2 sm:px-4">
       {sendError && <ErrorMessage message="Failed to send message. Please try again." />}
 
-      {/* {timeline.length === 0 && !createChatMutation.isPending && !cardId && (
-        <TopicSuggestions topics={topics} onTopicClick={handleTopicClick} />
-      )} */}
-
       <BaseChatInterface
         chatId={chatId}
         timeline={timeline}
         onSendMessage={handleSendMessage}
-        // inputValue={inputValue}
-        // setInputValue={setInputValue}
         isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
         flashcardContent={flashcardContent}
       />

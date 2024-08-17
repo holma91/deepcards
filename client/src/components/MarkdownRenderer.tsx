@@ -16,13 +16,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
   return (
     <div className={`markdown-content ${className || ''}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]} // Add remarkGfm here
+        remarkPlugins={[remarkMath, remarkGfm]}
         rehypePlugins={[rehypeKatex]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <div className=" max-w-[60vw] md:max-w-full overflow-x-auto">
+              <div className="max-w-[60vw] md:max-w-full overflow-x-auto">
                 <SyntaxHighlighter
                   style={dracula}
                   language={match[1]}
@@ -30,10 +30,10 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                   {...props}
                   customStyle={{
                     margin: 0,
-                    fontSize: 'inherit', // This allows us to control the font size via Tailwind classes
+                    fontSize: 'inherit',
                   }}
                   codeTagProps={{
-                    className: 'text-xs sm:text-sm md:text-base', // Responsive font sizing
+                    className: 'text-xs sm:text-sm md:text-base',
                   }}
                 >
                   {String(children).replace(/\n$/, '')}

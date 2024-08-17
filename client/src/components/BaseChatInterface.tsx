@@ -106,27 +106,6 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
 
   const isGeneratingFlashcards = generateFlashcardsMutation.isPending;
 
-  const renderTimelineItem = (item: TimelineItem, index: number, isLast: boolean) => {
-    if (item.type === 'message') {
-      return (
-        <div key={index} className={`mb-4 ${item.role === 'user' ? 'text-right' : 'text-left'}`}>
-          {/* <div ref={lastMessageRef}> */}
-          <div ref={isLast ? lastMessageRef : undefined}>
-            <MarkdownRenderer
-              content={item.content}
-              className={`inline-block max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg text-left text-sm sm:text-base ${
-                item.role === 'user' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
-              }`}
-            />
-          </div>
-        </div>
-      );
-    } else if (item.type === 'suggestion' && item.status !== 'pending') {
-      return <TimelineSuggestionCard key={index} suggestion={item} />;
-    }
-    return null;
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto">
@@ -135,7 +114,8 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
             <TopicSuggestions onTopicClick={handleTopicClick} />
           )}
           {flashcardContent}
-          {timeline.map((item, index) => renderTimelineItem(item, index, index === timeline.length - 1))}
+          <Timeline timeline={timeline} lastMessageRef={lastMessageRef} />
+
           {isAiResponding && (
             <div className="mb-4">
               {timeline.length === 0 && (
@@ -232,5 +212,38 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
     </div>
   );
 };
+
+interface TimelineProps {
+  timeline: TimelineItem[];
+  lastMessageRef: React.RefObject<HTMLDivElement>;
+}
+
+const Timeline: React.FC<TimelineProps> = React.memo(({ timeline, lastMessageRef }) => {
+  const renderTimelineItem = (item: TimelineItem, index: number, isLast: boolean) => {
+    if (item.type === 'message') {
+      return (
+        <div key={index} className={`mb-4 ${item.role === 'user' ? 'text-right' : 'text-left'}`}>
+          <div ref={isLast ? lastMessageRef : undefined}>
+            <MarkdownRenderer
+              content={item.content}
+              className={`inline-block max-w-[85%] sm:max-w-[80%] p-2 sm:p-3 rounded-lg text-left text-sm sm:text-base ${
+                item.role === 'user' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
+              }`}
+            />
+          </div>
+        </div>
+      );
+    } else if (item.type === 'suggestion' && item.status !== 'pending') {
+      return <TimelineSuggestionCard key={index} suggestion={item} />;
+    }
+    return null;
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-4">
+      {timeline.map((item, index) => renderTimelineItem(item, index, index === timeline.length - 1))}
+    </div>
+  );
+});
 
 export default BaseChatInterface;

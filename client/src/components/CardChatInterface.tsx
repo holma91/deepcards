@@ -17,7 +17,6 @@ interface CardChatInterfaceProps {
 
 const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed, onClose }) => {
   const [chatId, setChatId] = useState<string | undefined>(card.chat_id || undefined);
-  // const [inputValue, setInputValue] = useState('');
 
   const chatInfo = useChatInfo(chatId);
   const existingChatMutation = useExistingChat();
@@ -77,7 +76,7 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
   };
 
   const flashcardContent = (
-    <div className="max-w-full mx-auto space-y-2 sm:space-y-4 px-2 sm:px-0  sm:max-w-3xl sm:min-w-[32rem]">
+    <div className="max-w-full mx-auto space-y-2 sm:space-y-4  sm:max-w-3xl sm:min-w-[32rem]">
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         <div className="flex justify-between items-center p-2 sm:p-4 border-b border-gray-200">
           <button
@@ -133,8 +132,6 @@ const CardChatInterface: React.FC<CardChatInterfaceProps> = ({ card, isRevealed,
           chatId={card.chat_id || undefined}
           timeline={timeline}
           onSendMessage={handleSendMessage}
-          // inputValue={inputValue}
-          // setInputValue={setInputValue}
           isAiResponding={existingChatMutation.isPending || createChatMutation.isPending}
           flashcardContent={flashcardContent}
         />
