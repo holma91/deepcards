@@ -16,7 +16,9 @@ const fetchPendingSuggestions = async (chatId: string): Promise<Suggestion[]> =>
   });
 
   if (!response.ok) throw new Error('Failed to fetch pending suggestions');
-  return response.json();
+  const data = await response.json();
+  console.log('data', data);
+  return data;
 };
 
 export const usePendingSuggestions = (chatId: string) => {

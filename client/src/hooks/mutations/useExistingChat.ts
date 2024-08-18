@@ -72,6 +72,7 @@ export const useExistingChat = () => {
       queryClient.setQueryData(['chatInfo', newChat.chatId], context?.previousChatInfo);
     },
     onSuccess: (data, variables) => {
+      console.log('in onSuccess, data:', data);
       queryClient.setQueryData<ChatResponse>(['chatInfo', variables.chatId], (old) => {
         if (!old) return old;
         return {

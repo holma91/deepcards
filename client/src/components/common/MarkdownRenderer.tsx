@@ -19,7 +19,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         rehypePlugins={[rehypeKatex]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\w+)/.exec(className || '');
+            const match = /language-(\\w+)/.exec(className || '');
             return !inline && match ? (
               <div className="max-w-[60vw] md:max-w-full overflow-x-auto">
                 <SyntaxHighlighter
@@ -35,7 +35,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                     className: 'text-xs sm:text-sm md:text-base',
                   }}
                 >
-                  {String(children).replace(/\n$/, '')}
+                  {String(children).replace(/\\n$/, '')}
                 </SyntaxHighlighter>
               </div>
             ) : (

@@ -1,9 +1,9 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
 import openai from '../clients/openaiClient';
+import { zodResponseFormat } from 'openai/helpers/zod';
 import { supabase } from '../clients/supabaseClient';
 import { z } from 'zod';
-import instructor from '../clients/instructorClient';
 import { Database } from '../database.types';
 
 type Chat = Database['public']['Tables']['chats']['Row'];
@@ -21,6 +21,9 @@ type TimelineItem =
   | (Message & { type: 'message' })
   | (Suggestion & { type: 'suggestion' });
 
+const models = {
+  'gpt-4o': 'gpt-4o-2024-08-06',
+};
 const MATH_RENDERING_INSTRUCTIONS = `
   Writing math formulas:
   You have access to a KaTeX render environment for displaying mathematical expressions. Follow these guidelines and be aware of some limitations:
@@ -45,7 +48,31 @@ const MATH_RENDERING_INSTRUCTIONS = `
   
   Remember to use math notation when it enhances clarity and readability. For simple expressions in explanatory text, plain language may be more appropriate.
   `;
+const MATH_RENDERING_INSTRUCTIONS2 = `
+Writing math formulas:
+You have access to a KaTeX render environment for displaying mathematical expressions. Follow these guidelines:
 
+1. Inline Math:
+   - ALWAYS use single dollar signs ($) to delimit inline math expressions.
+   - NEVER use \\( ... \\) for inline math.
+   - Example: The set of rational numbers can be denoted as $Q$ or $\\\\mathbb{Q}$.
+
+2. Display Math:
+   - ALWAYS use double dollar signs ($$) for centered, display-style math on its own line.
+   - NEVER use \\[ ... \\] for display math.
+   - Example: The quadratic formula solution is:
+     $$x = \\\\frac{-b \\\\pm \\\\sqrt{b^2 - 4ac}}{2a}$$
+
+3. Limitations and Best Practices:
+   - \\\\text{} is used for including text within math mode, but be aware of its limitations:
+     - Do not use math-mode syntax (like subscripts _ or superscripts ^) inside \\\\text{}.
+     - \\\\text{} creates a text-mode environment, so math operations don't work inside it.
+   - Stick to basic text content inside \\\\text{} and use separate math mode for mathematical notations.
+
+Remember to use math notation when it enhances clarity and readability. For simple expressions in explanatory text, plain language may be more appropriate.
+
+IMPORTANT: Always use double backslashes (\\\\) before LaTeX commands in your output. This ensures proper escaping when the text is processed.
+`;
 const INITIAL_MESSAGE_GENERATION_INSTRUCTIONS = `You are an AI assistant engaged in a conversation to help users learn and understand various topics.
 
   Formatting Guidelines:
@@ -159,7 +186,6 @@ const router = express.Router();
 const TitleSchema = z.object({
   title: z
     .string()
-    .max(75)
     .describe(
       'A concise, relevant title for the chat based on the initial message'
     ),
@@ -181,7 +207,8 @@ const FlashcardsSchema = z.object({
 });
 
 async function generateTitle(userMessage: string): Promise<string> {
-  const result = await instructor.chat.completions.create({
+  const completion = await openai.beta.chat.completions.parse({
+    model: models['gpt-4o'],
     messages: [
       {
         role: 'system',
@@ -190,27 +217,46 @@ async function generateTitle(userMessage: string): Promise<string> {
       },
       { role: 'user', content: userMessage },
     ],
-    model: 'gpt-4o',
-    response_model: {
-      schema: TitleSchema,
-      name: 'ChatTitle',
-    },
+    response_format: zodResponseFormat(TitleSchema, 'ChatTitle'),
   });
 
-  return result.title;
+  if (!completion.choices[0].message.parsed) {
+    console.error('Title generation failed or parsing error occurred');
+    return 'Untitled Chat'; // or any default title you prefer
+  }
+
+  return completion.choices[0].message.parsed.title;
 }
 
-async function generateFlashcards(messages: OpenAIMessage[]) {
-  const result = await instructor.chat.completions.create({
-    messages,
-    model: 'gpt-4o',
-    response_model: {
-      schema: FlashcardsSchema,
-      name: 'Flashcards',
-    },
+async function generateMessage(messages: OpenAIMessage[]): Promise<string> {
+  const completion = await openai.chat.completions.create({
+    model: models['gpt-4o'],
+    messages: messages,
   });
 
-  return result.flashcards;
+  if (!completion.choices[0].message.content) {
+    console.error('Message generation failed');
+    return '';
+  }
+
+  return completion.choices[0].message.content;
+}
+
+async function generateFlashcards(
+  messages: OpenAIMessage[]
+): Promise<Array<{ front: string; back: string }>> {
+  const completion = await openai.beta.chat.completions.parse({
+    model: models['gpt-4o'],
+    messages,
+    response_format: zodResponseFormat(FlashcardsSchema, 'Flashcards'),
+  });
+
+  if (!completion.choices[0].message.parsed) {
+    console.error('No flashcards generated or parsing failed');
+    return [];
+  }
+
+  return completion.choices[0].message.parsed.flashcards;
 }
 
 function prepareMessagesForInitialGeneration(
@@ -436,16 +482,8 @@ router.post('/:chatId/cards', authenticateUser, async (req, res) => {
       originatingCard
     );
 
-    // console.log(
-    //   'Messages for flashcard generation:',
-    //   JSON.stringify(messages, null, 2)
-    // );
-
     const generatedCards = await generateFlashcards(messages);
 
-    console.log('generatedCards:', generatedCards);
-
-    // insert suggestions here
     const suggestionsToInsert: SuggestionInsert[] = generatedCards.map(
       (card) => ({
         user_id: req.user!.id,
@@ -509,11 +547,6 @@ router.get('/:chatId', authenticateUser, async (req, res) => {
       suggestions: suggestions || [],
     };
 
-    console.log(
-      'messages:',
-      messages.map((msg) => msg.content)
-    );
-
     res.json(responseData);
   } catch (error) {
     console.error('Error fetching chat:', error);
@@ -547,20 +580,13 @@ router.post('', authenticateUser, async (req, res) => {
       card = data;
     }
 
-    const apiMessages = prepareMessagesForInitialGeneration(message, card);
+    const allMessages = prepareMessagesForInitialGeneration(message, card);
 
     // Generate response and title in parallel
-    const [completion, title] = await Promise.all([
-      openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: apiMessages,
-      }),
+    const [response, title] = await Promise.all([
+      generateMessage(allMessages),
       generateTitle(message),
     ]);
-
-    const response = completion.choices[0].message.content;
-    console.log('ASSISTANT RESPONSE:', response);
-    console.log('GENERATED TITLE:', title);
 
     // Create a new chat with the generated title
     const newChat = await createNewChat(req.user.id, cardId, title);
@@ -625,8 +651,6 @@ router.post('/:chatId', authenticateUser, async (req, res) => {
       suggestions: Suggestion[];
     };
 
-    console.log('first message by assistant:', chat.messages[1]);
-
     const timeline: TimelineItem[] = [
       ...chat.messages.map((msg) => ({ ...msg, type: 'message' as const })),
       ...chat.suggestions.map((sugg) => ({
@@ -640,19 +664,13 @@ router.post('/:chatId', authenticateUser, async (req, res) => {
 
     const originatingCard = chat.cards ? chat.cards : undefined;
 
-    const apiMessages = prepareMessagesForMessageGeneration(
+    const allMessages = prepareMessagesForMessageGeneration(
       timeline,
       originatingCard
     );
-    apiMessages.push({ role: 'user', content: message });
+    allMessages.push({ role: 'user', content: message });
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: apiMessages,
-    });
-
-    const assistantResponse = completion.choices[0].message.content;
-    console.log('ASSISTANT RESPONSE:', assistantResponse);
+    const assistantResponse = await generateMessage(allMessages);
 
     await addMessageToChat(chatId, 'user', message);
     await addMessageToChat(chatId, 'assistant', assistantResponse ?? '');
