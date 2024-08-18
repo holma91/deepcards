@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import './styles/index.css';
+import './styles/markdown.css';
+import './styles/katex.css';
+
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
 import { ProfileProvider, useProfileContext } from './contexts/ProfileContext';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import LoadingScreen from './components/LoadingScreen';
+import LoadingScreen from './components/common/LoadingScreen';
 import SettingsModal from './components/modals/SettingsModal';
-
 import PublicHome from './pages/PublicHome';
 import Review from './pages/Review';
 import Chat from './pages/Chat';
@@ -15,17 +19,21 @@ import CardsByDeck from './pages/CardsByDeck';
 import SignupPage from './pages/SignUpPage';
 import SignInPage from './pages/SignInPage';
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <KeyboardShortcutProvider>
-      <AuthProvider>
-        <ProfileProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </ProfileProvider>
-      </AuthProvider>
-    </KeyboardShortcutProvider>
+    <QueryClientProvider client={queryClient}>
+      <KeyboardShortcutProvider>
+        <AuthProvider>
+          <ProfileProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </ProfileProvider>
+        </AuthProvider>
+      </KeyboardShortcutProvider>
+    </QueryClientProvider>
   );
 }
 

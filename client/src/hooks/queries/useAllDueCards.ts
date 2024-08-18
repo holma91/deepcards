@@ -1,10 +1,8 @@
-// src/hooks/useAllDueCards.ts
-
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 
-import { API_BASE_URL } from '../config';
-import { CardWithDecks } from '../types';
+import { API_BASE_URL } from '../../config';
+import { CardWithDecks } from '../../types';
 
 const fetchAllDueCards = async (): Promise<CardWithDecks[]> => {
   const {

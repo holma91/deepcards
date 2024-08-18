@@ -1,8 +1,7 @@
-// src/hooks/useDeckCards.ts
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../utils/supabaseClient';
-import { API_BASE_URL } from '../config';
-import { Card } from '../types';
+import { supabase } from '../../clients/supabaseClient';
+import { API_BASE_URL } from '../../config';
+import { Card } from '../../types';
 
 const fetchDeckCards = async (deckId: string): Promise<Card[]> => {
   const {

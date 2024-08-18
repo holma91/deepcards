@@ -1,6 +1,5 @@
-// src/hooks/mutations/useRenameChat.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 import { API_BASE_URL } from '../../config';
 
 interface RenameChatParams {

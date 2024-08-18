@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 
 export const useLoginWithGoogle = () => {
   const loginWithGoogle = async (redirectPath: string) => {

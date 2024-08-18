@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import '../styles/markdown.css';
-import { useGenerateFlashcards } from '../hooks/mutations/useGenerateFlashcards';
-import { useDeleteSuggestions } from '../hooks/mutations/useDeleteSuggestions';
-import { usePendingSuggestions } from '../hooks/usePendingSuggestions';
-import { TimelineItem } from '../types';
-import TimelineSuggestionCard from './TimelineSuggestionCard';
-import PendingSuggestionCard from './PendingSuggestionCard';
-import MarkdownRenderer from './MarkdownRenderer';
-import TopicSuggestions from './TopicSuggestions';
+
+import { useGenerateFlashcards } from '../../hooks/mutations/useGenerateFlashcards';
+import { useDeleteSuggestions } from '../../hooks/mutations/useDeleteSuggestions';
+import { usePendingSuggestions } from '../../hooks/queries/usePendingSuggestions';
+import { TimelineItem } from '../../types';
+import TimelineSuggestionCard from '../cards/TimelineSuggestionCard';
+import PendingSuggestionCard from '../cards/PendingSuggestionCard';
+import MarkdownRenderer from '../common/MarkdownRenderer';
+import TopicSuggestions from '../cards/TopicSuggestions';
 
 interface BaseChatInterfaceProps {
   chatId?: string;
@@ -125,7 +125,6 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                   </div>
                 </div>
               )}
-              {/* AI's "Responding..." indicator */}
               <div className="flex justify-start">
                 <div className="bg-gray-100 rounded-lg p-2 sm:p-3">
                   <div className="animate-pulse text-sm sm:text-base">Responding...</div>

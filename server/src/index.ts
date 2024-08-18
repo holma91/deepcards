@@ -38,8 +38,8 @@ const shortTermLimiter = rateLimit({
 
 app.use(shortTermLimiter);
 
-app.get('/', (req, res) => {
-  res.send('Deepcards API is running');
+app.get('/ping', (req, res) => {
+  res.send('pong');
 });
 
 app.use('/api/profiles', profilesRouter);

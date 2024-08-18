@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { API_BASE_URL } from '../config';
-import { supabase } from '../utils/supabaseClient';
-import { Card, Chat, Message, Suggestion } from '../types';
+import { API_BASE_URL } from '../../config';
+import { supabase } from '../../clients/supabaseClient';
+import { Card, Chat, Message, Suggestion } from '../../types';
 
 interface ChatResponse extends Omit<Chat, 'card_id'> {
   card: Card | null;

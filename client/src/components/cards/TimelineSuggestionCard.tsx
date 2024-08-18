@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Suggestion } from '../types';
-import MarkdownRenderer from './MarkdownRenderer';
+import { Suggestion } from '../../types';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
 interface TimelineSuggestionCardProps {
   suggestion: Suggestion;

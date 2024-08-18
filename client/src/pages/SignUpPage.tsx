@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthForm from '../components/AuthForm';
+import AuthForm from '../components/auth/AuthForm';
 
 const SignUpPage: React.FC = () => {
   const navigate = useNavigate();

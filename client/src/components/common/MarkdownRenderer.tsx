@@ -5,7 +5,6 @@ import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
-import '../styles/katex.css';
 
 interface MarkdownRendererProps {
   content: string;

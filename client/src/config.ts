@@ -3,7 +3,6 @@ const getApiBaseUrl = () => {
     return 'https://api.deepcards.ai/api';
   }
 
-  // For development
   const devApiUrl = import.meta.env.VITE_DEV_API_URL;
   if (devApiUrl) {
     return devApiUrl;

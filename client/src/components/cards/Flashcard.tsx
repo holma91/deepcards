@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import renderDeckInfo from '../utils/renderDeckInfo';
-import CardChatInterface from './CardChatInterface';
-import Tooltip from './Tooltip';
-import { Card, CardWithDecks } from '../types';
-import MarkdownRenderer from './MarkdownRenderer';
-import { reviewCard } from '../utils/utils';
-import { useProfileContext } from '../contexts/ProfileContext';
-import { useUpdateCard } from '../hooks/mutations/useUpdateCard';
-import MarkdownTextarea from './MarkdownTextArea';
+import renderDeckInfo from '../../utils/renderDeckInfo';
+import CardChatInterface from '../chat/CardChatInterface';
+import Tooltip from '../common/Tooltip';
+import { Card, CardWithDecks } from '../../types';
+import MarkdownRenderer from '../common/MarkdownRenderer';
+import { reviewCard } from '../../utils/utils';
+import { useProfileContext } from '../../contexts/ProfileContext';
+import { useUpdateCard } from '../../hooks/mutations/useUpdateCard';
+import MarkdownTextarea from '../common/MarkdownTextArea';
 
 interface FlashcardProps {
   card: CardWithDecks;

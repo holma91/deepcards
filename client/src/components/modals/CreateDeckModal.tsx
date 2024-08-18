@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useCreateDeck } from '../../hooks/mutations/useCreateDeck';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
+import { useCreateDeck } from '../../hooks/mutations/useCreateDeck';
 
 interface CreateDeckModalProps {
   isOpen: boolean;

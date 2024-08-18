@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-table';
 import { Menu, Transition, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '../types';
+import { Card } from '../../types';
 
 interface CardTableProps {
   cards: Card[];

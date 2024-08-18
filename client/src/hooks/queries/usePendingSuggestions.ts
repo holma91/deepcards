@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../utils/supabaseClient';
-import { API_BASE_URL } from '../config';
-import { Suggestion } from '../types';
+import { supabase } from '../../clients/supabaseClient';
+import { API_BASE_URL } from '../../config';
+import { Suggestion } from '../../types';
 
 const fetchPendingSuggestions = async (chatId: string): Promise<Suggestion[]> => {
   const {

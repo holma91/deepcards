@@ -1,9 +1,8 @@
-// src/hooks/useCreateCard.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 import { Card } from '../../types';
 import { API_BASE_URL } from '../../config';
-import { DeckDueCount } from '../useDecksDueCounts';
+import { DeckDueCount } from '../queries/useDecksDueCounts';
 
 interface CreateCardParams {
   front: string;

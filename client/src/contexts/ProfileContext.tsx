@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useProfile } from '../hooks/useProfile';
+import { useProfile } from '../hooks/queries/useProfile';
 import { useUpdateProfile } from '../hooks/mutations/useUpdateProfile';
 import { Profile } from '../types';
 

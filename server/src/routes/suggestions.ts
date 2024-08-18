@@ -1,11 +1,14 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../clients/supabaseClient';
 import { Database } from '../database.types';
+
+type SuggestionUpdate = Database['public']['Tables']['suggestions']['Update'];
+type InsertCard = Database['public']['Tables']['cards']['Insert'];
 
 const router = express.Router();
 
-// get pending suggestions for a chat
+// Get pending suggestions for a chat
 router.get('/pending/:chatId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -31,6 +34,7 @@ router.get('/pending/:chatId', authenticateUser, async (req, res) => {
   }
 });
 
+// Delete suggestions
 router.delete('/', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -59,8 +63,7 @@ router.delete('/', authenticateUser, async (req, res) => {
   }
 });
 
-type SuggestionUpdate = Database['public']['Tables']['suggestions']['Update'];
-
+// Modify a suggestion
 router.patch('/:suggestionId', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });
@@ -104,8 +107,7 @@ router.patch('/:suggestionId', authenticateUser, async (req, res) => {
   }
 });
 
-type InsertCard = Database['public']['Tables']['cards']['Insert'];
-
+// Accept a suggestion
 router.post('/:suggestionId/accept', authenticateUser, async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'User not authenticated' });

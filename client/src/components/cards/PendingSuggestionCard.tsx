@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Deck, Suggestion } from '../types';
-import { useDecks } from '../hooks/useDecks';
-import { useAcceptSuggestion } from '../hooks/mutations/useAcceptSuggestion';
-import { useUpdateSuggestion } from '../hooks/mutations/useUpdateSuggestion';
-import { useCreateDeck } from '../hooks/mutations/useCreateDeck';
-import MarkdownRenderer from './MarkdownRenderer';
-import MarkdownTextArea from './MarkdownTextArea';
 import { v4 as uuidv4 } from 'uuid';
+import { Deck, Suggestion } from '../../types';
+import { useDecks } from '../../hooks/queries/useDecks';
+import { useAcceptSuggestion } from '../../hooks/mutations/useAcceptSuggestion';
+import { useUpdateSuggestion } from '../../hooks/mutations/useUpdateSuggestion';
+import { useCreateDeck } from '../../hooks/mutations/useCreateDeck';
+import MarkdownRenderer from '../common/MarkdownRenderer';
+import MarkdownTextArea from '../common/MarkdownTextArea';
 
 interface PendingSuggestionCardProps {
   suggestion: Suggestion;

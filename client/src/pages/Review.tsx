@@ -1,10 +1,10 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import Flashcard from '../components/Flashcard';
+import Flashcard from '../components/cards/Flashcard';
 import { useReviewCard } from '../hooks/mutations/useReviewCard';
-import { useAllDueCards } from '../hooks/useAllDueCards';
-import { useDeckDueCards } from '../hooks/useDeckDueCards';
-import LoadingScreen from '../components/LoadingScreen';
+import { useAllDueCards } from '../hooks/queries/useAllDueCards';
+import { useDeckDueCards } from '../hooks/queries/useDeckDueCards';
+import LoadingScreen from '../components/common/LoadingScreen';
 
 const Review: React.FC = () => {
   const { deckId } = useParams<{ deckId?: string }>();

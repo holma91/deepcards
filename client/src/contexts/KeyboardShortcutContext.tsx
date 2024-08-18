@@ -1,4 +1,3 @@
-// src/contexts/KeyboardShortcutContext.tsx
 import React, { createContext, useContext, useState } from 'react';
 
 interface KeyboardShortcutContextType {

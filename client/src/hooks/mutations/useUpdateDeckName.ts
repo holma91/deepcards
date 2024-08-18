@@ -1,8 +1,7 @@
-// src/hooks/mutations/useUpdateDeckName.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 import { API_BASE_URL } from '../../config';
-import { DeckDueCount } from '../useDecksDueCounts';
+import { DeckDueCount } from '../queries/useDecksDueCounts';
 
 interface UpdateDeckNameParams {
   deckId: string;

@@ -1,8 +1,7 @@
-// src/hooks/mutations/useUpdateSuggestion.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_BASE_URL } from '../../config';
 import { Suggestion, SuggestionStatus } from '../../types';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 
 interface UpdateSuggestionParams {
   suggestionId: string;

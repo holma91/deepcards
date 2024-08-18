@@ -1,18 +1,17 @@
-// src/components/DeckCards.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateCard } from '../hooks/mutations/useCreateCard';
-import CardTable from '../components/CardTable';
+import CardTable from '../components/cards/CardTable';
 import { useDeleteCard } from '../hooks/mutations/useDeleteCard';
 import { useDeleteDeck } from '../hooks/mutations/useDeleteDeck';
-import { useDeck } from '../hooks/useDeck';
-import { useDeckCards } from '../hooks/useDeckCards';
-import CardPreview from '../components/CardPreview';
-import MarkdownTextarea from '../components/MarkdownTextArea';
+import { useDeck } from '../hooks/queries/useDeck';
+import { useDeckCards } from '../hooks/queries/useDeckCards';
+import CardPreview from '../components/cards/CardPreview';
+import MarkdownTextarea from '../components/common/MarkdownTextArea';
 import { Card } from '../types';
 import { useUpdateCard } from '../hooks/mutations/useUpdateCard';
 import DeckSettingsModal from '../components/modals/DeckSettingsModal';
-import { useAllCards } from '../hooks/useAllCards';
+import { useAllCards } from '../hooks/queries/useAllCards';
 
 const CardsByDeck: React.FC = () => {
   const navigate = useNavigate();

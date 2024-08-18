@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../utils/supabaseClient';
-import { Chat } from '../types';
-import { API_BASE_URL } from '../config';
+import { supabase } from '../../clients/supabaseClient';
+import { Chat } from '../../types';
+import { API_BASE_URL } from '../../config';
 
 const fetchChats = async (): Promise<Chat[]> => {
   const {

@@ -1,13 +1,12 @@
-// src/components/layout/Sidebar.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import { useDecksDueCounts } from '../../hooks/useDecksDueCounts';
-import { useDecks } from '../../hooks/useDecks';
+import { useDecksDueCounts } from '../../hooks/queries/useDecksDueCounts';
+import { useDecks } from '../../hooks/queries/useDecks';
 import CreateDeckModal from '../modals/CreateDeckModal';
 import DeleteChatModal from '../modals/DeleteChatModal';
 import { useKeyboardShortcuts } from '../../contexts/KeyboardShortcutContext';
-import { useChats } from '../../hooks/useChats';
+import { useChats } from '../../hooks/queries/useChats';
 import { useRenameChat } from '../../hooks/mutations/useRenameChat';
 import { useDeleteChat } from '../../hooks/mutations/useDeleteChat';
 

@@ -1,12 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import BaseChatInterface from '../components/BaseChatInterface';
-import { useChatInfo } from '../hooks/useChatInfo';
+import BaseChatInterface from '../components/chat/BaseChatInterface';
+import { useChatInfo } from '../hooks/queries/useChatInfo';
 import { useExistingChat } from '../hooks/mutations/useExistingChat';
 import { useCreateChat } from '../hooks/mutations/useCreateChat';
 import { createTimeline } from '../utils/utils';
-import MarkdownRenderer from '../components/MarkdownRenderer';
-import { useCard } from '../hooks/useCard';
+import MarkdownRenderer from '../components/common/MarkdownRenderer';
+import { useCard } from '../hooks/queries/useCard';
 
 const Chat: React.FC = () => {
   const { chatId } = useParams<{ chatId?: string }>();
@@ -15,6 +15,7 @@ const Chat: React.FC = () => {
   const navigate = useNavigate();
 
   const chatInfo = useChatInfo(chatId);
+
   const cardInfo = useCard(cardId || undefined);
   const existingChatMutation = useExistingChat();
   const createChatMutation = useCreateChat();

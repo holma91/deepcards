@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateUser } from '../middleware/auth';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../clients/supabaseClient';
 import { Database } from '../database.types';
 
 type Card = Database['public']['Tables']['cards']['Row'];

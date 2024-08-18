@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import BaseChatInterface from './BaseChatInterface';
-import renderDeckInfo from '../utils/renderDeckInfo';
-import { useChatInfo } from '../hooks/useChatInfo';
-import { useExistingChat } from '../hooks/mutations/useExistingChat';
-import { useCreateChat } from '../hooks/mutations/useCreateChat';
-import { CardWithDecks } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
-import { createTimeline } from '../utils/utils';
-import MarkdownRenderer from './MarkdownRenderer';
+
+import BaseChatInterface from './BaseChatInterface';
+import renderDeckInfo from '../../utils/renderDeckInfo';
+import { useChatInfo } from '../../hooks/queries/useChatInfo';
+import { useExistingChat } from '../../hooks/mutations/useExistingChat';
+import { useCreateChat } from '../../hooks/mutations/useCreateChat';
+import { CardWithDecks } from '../../types';
+import { createTimeline } from '../../utils/utils';
+import MarkdownRenderer from '../common/MarkdownRenderer';
 
 interface CardChatInterfaceProps {
   card: CardWithDecks;

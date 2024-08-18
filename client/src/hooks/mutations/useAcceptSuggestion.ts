@@ -1,6 +1,5 @@
-// src/hooks/mutations/useAcceptSuggestion.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../clients/supabaseClient';
 import { API_BASE_URL } from '../../config';
 import { Suggestion, Card } from '../../types';
 

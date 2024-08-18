@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLoginWithGoogle } from '../hooks/useLoginWithGoogle';
-import { usePasswordlessLogin } from '../hooks/usePasswordlessLogin';
+import { useLoginWithGoogle } from '../../hooks/auth/useLoginWithGoogle';
+import { usePasswordlessLogin } from '../../hooks/auth/usePasswordlessLogin';
 
 interface AuthFormProps {
   redirectPath: string;
