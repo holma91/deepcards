@@ -11,7 +11,16 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+// Simple processing function
+const processContent = (content: string): string => {
+  return content
+    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$1$$') // Replace \[...\] with $$...$$
+    .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$'); // Replace \(...\) with $...$
+};
+
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
+  const processedContent = processContent(content);
+
   return (
     <div className={`markdown-content ${className || ''}`}>
       <ReactMarkdown
@@ -19,7 +28,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         rehypePlugins={[rehypeKatex]}
         components={{
           code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\\w+)/.exec(className || '');
+            const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
               <div className="max-w-[60vw] md:max-w-full overflow-x-auto">
                 <SyntaxHighlighter
@@ -35,7 +44,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
                     className: 'text-xs sm:text-sm md:text-base',
                   }}
                 >
-                  {String(children).replace(/\\n$/, '')}
+                  {String(children).replace(/\n$/, '')}
                 </SyntaxHighlighter>
               </div>
             ) : (
@@ -46,7 +55,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
           },
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

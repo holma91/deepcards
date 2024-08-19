@@ -8,7 +8,7 @@ const PublicHome: React.FC = () => {
     <div className="flex flex-col items-center justify-center h-full bg-white px-4 py-16">
       <div className="max-w-xl w-full">
         <h1 className="text-3xl font-bold mb-4 text-gray-900">Learn, chat, and remember</h1>
-        <p className="text-lg mb-6 text-gray-600">AI-powered learning meets traditional memory techniques.</p>
+        <p className="text-lg mb-6 text-gray-600">LLM-powered learning meets traditional memory techniques.</p>
 
         <ul className="list-disc pl-5 mb-12 space-y-2 text-gray-600">
           <li>Every flashcard has an associated conversation</li>

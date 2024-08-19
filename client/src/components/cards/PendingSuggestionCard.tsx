@@ -11,10 +11,16 @@ import MarkdownTextArea from '../common/MarkdownTextArea';
 interface PendingSuggestionCardProps {
   suggestion: Suggestion;
   chatId: string;
+  selectedDeckId: string;
+  setSelectedDeckId: (deckId: string) => void;
 }
 
-const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({ suggestion, chatId }) => {
-  const [selectedDeckId, setSelectedDeckId] = useState<string>('');
+const PendingSuggestionCard: React.FC<PendingSuggestionCardProps> = ({
+  suggestion,
+  chatId,
+  selectedDeckId,
+  setSelectedDeckId,
+}) => {
   const [newDeckName, setNewDeckName] = useState<string>('');
   const [isCreatingNewDeck, setIsCreatingNewDeck] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);

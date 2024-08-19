@@ -7,7 +7,7 @@ import './styles/katex.css';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { KeyboardShortcutProvider } from './contexts/KeyboardShortcutContext';
-import { ProfileProvider, useProfileContext } from './contexts/ProfileContext';
+import { ProfileProvider } from './contexts/ProfileContext';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import LoadingScreen from './components/common/LoadingScreen';
@@ -39,7 +39,6 @@ function App() {
 
 const AppContent: React.FC = () => {
   const { session, loading: authLoading } = useAuth();
-  const { profile } = useProfileContext();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const location = useLocation();
@@ -63,12 +62,6 @@ const AppContent: React.FC = () => {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    if (profile) {
-      console.log(`Theme set to: ${profile.theme}`);
-    }
-  }, [profile]);
 
   if (authLoading) {
     return <LoadingScreen />;
