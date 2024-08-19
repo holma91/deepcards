@@ -31,6 +31,7 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [lastSentMessage, setLastSentMessage] = useState('');
+  const [selectedDeckId, setSelectedDeckId] = useState<string>('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -164,6 +165,8 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
               key={pendingSuggestions[0].id}
               suggestion={pendingSuggestions[0]}
               chatId={chatId || ''}
+              selectedDeckId={selectedDeckId}
+              setSelectedDeckId={setSelectedDeckId}
             />
           </div>
         ) : (
@@ -196,7 +199,11 @@ const BaseChatInterface: React.FC<BaseChatInterfaceProps> = ({
                 </button>
                 {chatId ? (
                   <button
-                    onClick={handleGenerateFlashcards}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleGenerateFlashcards();
+                    }}
+                    type="button"
                     disabled={isGeneratingFlashcards}
                     className="px-2 sm:px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-xs sm:text-sm hover:bg-gray-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
